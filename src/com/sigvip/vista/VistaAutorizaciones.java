@@ -1,65 +1,813 @@
 package com.sigvip.vista;
 
+import com.sigvip.controlador.ControladorAutorizaciones;
+import com.sigvip.modelo.Autorizacion;
+import com.sigvip.modelo.Interno;
 import com.sigvip.modelo.Usuario;
+import com.sigvip.modelo.Visitante;
+import com.sigvip.modelo.enums.EstadoAutorizacion;
+import com.sigvip.modelo.enums.TipoRelacion;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.sql.SQLException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
 
 /**
  * Vista para gestión de autorizaciones de visita.
  * Implementa RF002: Autorizar Visita.
  *
- * NOTA: Esta es una implementación stub/placeholder.
- * Pendiente de implementación completa.
+ * Funcionalidades:
+ * - Buscar visitantes e internos
+ * - Crear nuevas autorizaciones
+ * - Listar autorizaciones existentes
+ * - Gestionar estados (suspender, revocar, renovar, reactivar)
+ *
+ * Especificación: PDF Sección 7.1 (RF002), Sección 8.3
  */
 public class VistaAutorizaciones extends JFrame {
 
-    private Usuario usuarioActual;
+    private final Usuario usuarioActual;
+    private final ControladorAutorizaciones controlador;
 
+    // Componentes de búsqueda de visitante
+    private JTextField txtDniVisitante;
+    private JButton btnBuscarVisitante;
+    private JLabel lblVisitanteSeleccionado;
+    private Visitante visitanteSeleccionado;
+
+    // Componentes de búsqueda de interno
+    private JTextField txtLegajoInterno;
+    private JButton btnBuscarInterno;
+    private JLabel lblInternoSeleccionado;
+    private Interno internoSeleccionado;
+
+    // Componentes de formulario de autorización
+    private JComboBox<TipoRelacion> cmbTipoRelacion;
+    private JTextField txtFechaVencimiento;
+    private JTextArea txtObservaciones;
+    private JButton btnCrearAutorizacion;
+    private JButton btnLimpiarFormulario;
+
+    // Componentes de listado
+    private JTable tblAutorizaciones;
+    private DefaultTableModel modeloTabla;
+    private JComboBox<EstadoAutorizacion> cmbFiltroEstado;
+    private JButton btnActualizarListado;
+    private JButton btnSuspender;
+    private JButton btnRevocar;
+    private JButton btnReactivar;
+    private JButton btnRenovar;
+
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yyyy");
+
+    /**
+     * Constructor de la vista.
+     *
+     * @param usuario usuario autenticado
+     */
     public VistaAutorizaciones(Usuario usuario) {
         this.usuarioActual = usuario;
+        this.controlador = new ControladorAutorizaciones(usuario);
+
         inicializarComponentes();
         configurarVentana();
+        cargarAutorizaciones();
     }
 
+    /**
+     * Configura la ventana principal.
+     */
     private void configurarVentana() {
-        setTitle("SIGVIP - Autorizaciones de Visita (RF002)");
-        setSize(700, 500);
+        setTitle("SIGVIP - Gestión de Autorizaciones (RF002)");
+        setSize(1200, 800);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
     }
 
+    /**
+     * Inicializa todos los componentes de la interfaz.
+     */
     private void inicializarComponentes() {
-        JPanel panel = new JPanel(new BorderLayout(20, 20));
-        panel.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
+        JPanel panelPrincipal = new JPanel(new BorderLayout(10, 10));
+        panelPrincipal.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        JLabel lblTitulo = new JLabel("Gestión de Autorizaciones", SwingConstants.CENTER);
-        lblTitulo.setFont(new Font("Arial", Font.BOLD, 20));
+        // Panel superior: Título
+        JPanel panelTitulo = crearPanelTitulo();
+        panelPrincipal.add(panelTitulo, BorderLayout.NORTH);
 
-        JTextArea txtInfo = new JTextArea(
-            "RF002: Autorizar Visita\n\n" +
-            "Esta funcionalidad permite:\n" +
-            "• Crear nuevas autorizaciones visitante-interno\n" +
-            "• Especificar el tipo de relación\n" +
-            "• Establecer fecha de vencimiento\n" +
-            "• Gestionar estados de autorizaciones\n\n" +
-            "ESTADO: En desarrollo\n\n" +
-            "Por implementar:\n" +
-            "- Formulario de nueva autorización\n" +
-            "- Búsqueda de visitantes e internos\n" +
-            "- Listado de autorizaciones existentes\n" +
-            "- Modificación de autorizaciones"
-        );
-        txtInfo.setEditable(false);
-        txtInfo.setFont(new Font("Arial", Font.PLAIN, 12));
+        // Panel central: Dividido en formulario y listado
+        JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+        splitPane.setDividerLocation(350);
+        splitPane.setTopComponent(crearPanelFormulario());
+        splitPane.setBottomComponent(crearPanelListado());
+        panelPrincipal.add(splitPane, BorderLayout.CENTER);
 
-        JButton btnCerrar = new JButton("Cerrar");
-        btnCerrar.addActionListener(e -> dispose());
+        add(panelPrincipal);
+    }
 
-        panel.add(lblTitulo, BorderLayout.NORTH);
-        panel.add(new JScrollPane(txtInfo), BorderLayout.CENTER);
-        panel.add(btnCerrar, BorderLayout.SOUTH);
+    /**
+     * Crea el panel de título.
+     */
+    private JPanel crearPanelTitulo() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBorder(BorderFactory.createEtchedBorder());
+        panel.setBackground(new Color(70, 130, 180));
 
-        add(panel);
+        JLabel lblTitulo = new JLabel("GESTIÓN DE AUTORIZACIONES DE VISITA", SwingConstants.CENTER);
+        lblTitulo.setFont(new Font("Arial", Font.BOLD, 18));
+        lblTitulo.setForeground(Color.WHITE);
+        lblTitulo.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        panel.add(lblTitulo, BorderLayout.CENTER);
+
+        return panel;
+    }
+
+    /**
+     * Crea el panel de formulario de nueva autorización.
+     */
+    private JPanel crearPanelFormulario() {
+        JPanel panelFormulario = new JPanel(new BorderLayout(10, 10));
+        panelFormulario.setBorder(BorderFactory.createTitledBorder("Nueva Autorización"));
+
+        // Panel de búsquedas
+        JPanel panelBusquedas = new JPanel(new GridLayout(2, 1, 5, 5));
+        panelBusquedas.add(crearPanelBusquedaVisitante());
+        panelBusquedas.add(crearPanelBusquedaInterno());
+
+        // Panel de datos de autorización
+        JPanel panelDatos = crearPanelDatosAutorizacion();
+
+        // Panel de botones
+        JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        btnCrearAutorizacion = new JButton("Crear Autorización");
+        btnCrearAutorizacion.setFont(new Font("Arial", Font.BOLD, 12));
+        btnCrearAutorizacion.setBackground(new Color(34, 139, 34));
+        btnCrearAutorizacion.setForeground(Color.WHITE);
+        btnCrearAutorizacion.addActionListener(e -> crearAutorizacion());
+
+        btnLimpiarFormulario = new JButton("Limpiar");
+        btnLimpiarFormulario.addActionListener(e -> limpiarFormulario());
+
+        panelBotones.add(btnLimpiarFormulario);
+        panelBotones.add(btnCrearAutorizacion);
+
+        panelFormulario.add(panelBusquedas, BorderLayout.NORTH);
+        panelFormulario.add(panelDatos, BorderLayout.CENTER);
+        panelFormulario.add(panelBotones, BorderLayout.SOUTH);
+
+        return panelFormulario;
+    }
+
+    /**
+     * Crea el panel de búsqueda de visitante.
+     */
+    private JPanel crearPanelBusquedaVisitante() {
+        JPanel panel = new JPanel(new BorderLayout(5, 5));
+        panel.setBorder(BorderFactory.createTitledBorder("1. Buscar Visitante"));
+
+        JPanel panelBusqueda = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        panelBusqueda.add(new JLabel("DNI:"));
+
+        txtDniVisitante = new JTextField(15);
+        panelBusqueda.add(txtDniVisitante);
+
+        btnBuscarVisitante = new JButton("Buscar");
+        btnBuscarVisitante.addActionListener(e -> buscarVisitante());
+        panelBusqueda.add(btnBuscarVisitante);
+
+        lblVisitanteSeleccionado = new JLabel("Ningún visitante seleccionado");
+        lblVisitanteSeleccionado.setFont(new Font("Arial", Font.ITALIC, 11));
+        lblVisitanteSeleccionado.setForeground(Color.GRAY);
+
+        panel.add(panelBusqueda, BorderLayout.NORTH);
+        panel.add(lblVisitanteSeleccionado, BorderLayout.CENTER);
+
+        return panel;
+    }
+
+    /**
+     * Crea el panel de búsqueda de interno.
+     */
+    private JPanel crearPanelBusquedaInterno() {
+        JPanel panel = new JPanel(new BorderLayout(5, 5));
+        panel.setBorder(BorderFactory.createTitledBorder("2. Buscar Interno"));
+
+        JPanel panelBusqueda = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        panelBusqueda.add(new JLabel("Legajo:"));
+
+        txtLegajoInterno = new JTextField(15);
+        panelBusqueda.add(txtLegajoInterno);
+
+        btnBuscarInterno = new JButton("Buscar");
+        btnBuscarInterno.addActionListener(e -> buscarInterno());
+        panelBusqueda.add(btnBuscarInterno);
+
+        lblInternoSeleccionado = new JLabel("Ningún interno seleccionado");
+        lblInternoSeleccionado.setFont(new Font("Arial", Font.ITALIC, 11));
+        lblInternoSeleccionado.setForeground(Color.GRAY);
+
+        panel.add(panelBusqueda, BorderLayout.NORTH);
+        panel.add(lblInternoSeleccionado, BorderLayout.CENTER);
+
+        return panel;
+    }
+
+    /**
+     * Crea el panel de datos de la autorización.
+     */
+    private JPanel crearPanelDatosAutorizacion() {
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBorder(BorderFactory.createTitledBorder("3. Datos de Autorización"));
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        // Tipo de relación
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        panel.add(new JLabel("Tipo de Relación: *"), gbc);
+
+        gbc.gridx = 1;
+        cmbTipoRelacion = new JComboBox<>(TipoRelacion.values());
+        panel.add(cmbTipoRelacion, gbc);
+
+        // Fecha de vencimiento
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        panel.add(new JLabel("Fecha Vencimiento:"), gbc);
+
+        gbc.gridx = 1;
+        txtFechaVencimiento = new JTextField(15);
+        txtFechaVencimiento.setToolTipText("Formato: dd/MM/yyyy (dejar vacío para autorización indefinida)");
+        panel.add(txtFechaVencimiento, gbc);
+
+        // Observaciones
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.anchor = GridBagConstraints.NORTH;
+        panel.add(new JLabel("Observaciones:"), gbc);
+
+        gbc.gridx = 1;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        txtObservaciones = new JTextArea(3, 30);
+        txtObservaciones.setLineWrap(true);
+        txtObservaciones.setWrapStyleWord(true);
+        JScrollPane scrollObservaciones = new JScrollPane(txtObservaciones);
+        panel.add(scrollObservaciones, gbc);
+
+        return panel;
+    }
+
+    /**
+     * Crea el panel de listado de autorizaciones.
+     */
+    private JPanel crearPanelListado() {
+        JPanel panel = new JPanel(new BorderLayout(5, 5));
+        panel.setBorder(BorderFactory.createTitledBorder("Autorizaciones Existentes"));
+
+        // Panel de filtros
+        JPanel panelFiltros = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        panelFiltros.add(new JLabel("Filtrar por estado:"));
+
+        cmbFiltroEstado = new JComboBox<>();
+        cmbFiltroEstado.addItem(null); // Opción "Todos"
+        for (EstadoAutorizacion estado : EstadoAutorizacion.values()) {
+            cmbFiltroEstado.addItem(estado);
+        }
+        cmbFiltroEstado.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value,
+                                                         int index, boolean isSelected,
+                                                         boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                setText(value == null ? "Todos" : ((EstadoAutorizacion) value).getDescripcion());
+                return this;
+            }
+        });
+        cmbFiltroEstado.addActionListener(e -> cargarAutorizaciones());
+        panelFiltros.add(cmbFiltroEstado);
+
+        btnActualizarListado = new JButton("Actualizar");
+        btnActualizarListado.addActionListener(e -> cargarAutorizaciones());
+        panelFiltros.add(btnActualizarListado);
+
+        // Tabla de autorizaciones
+        String[] columnas = {"ID", "Visitante", "DNI", "Interno", "Legajo",
+                           "Tipo Relación", "Fecha Autorizac.", "Fecha Venc.", "Estado", "Vigente"};
+        modeloTabla = new DefaultTableModel(columnas, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // Tabla no editable
+            }
+        };
+
+        tblAutorizaciones = new JTable(modeloTabla);
+        tblAutorizaciones.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        tblAutorizaciones.getColumnModel().getColumn(0).setPreferredWidth(50);
+        tblAutorizaciones.getColumnModel().getColumn(1).setPreferredWidth(150);
+        tblAutorizaciones.getColumnModel().getColumn(3).setPreferredWidth(150);
+
+        JScrollPane scrollTabla = new JScrollPane(tblAutorizaciones);
+
+        // Panel de botones de acciones
+        JPanel panelAcciones = new JPanel(new FlowLayout(FlowLayout.LEFT));
+
+        btnSuspender = new JButton("Suspender");
+        btnSuspender.setBackground(new Color(255, 165, 0));
+        btnSuspender.addActionListener(e -> suspenderAutorizacion());
+        panelAcciones.add(btnSuspender);
+
+        btnReactivar = new JButton("Reactivar");
+        btnReactivar.setBackground(new Color(34, 139, 34));
+        btnReactivar.setForeground(Color.WHITE);
+        btnReactivar.addActionListener(e -> reactivarAutorizacion());
+        panelAcciones.add(btnReactivar);
+
+        btnRenovar = new JButton("Renovar");
+        btnRenovar.setBackground(new Color(70, 130, 180));
+        btnRenovar.setForeground(Color.WHITE);
+        btnRenovar.addActionListener(e -> renovarAutorizacion());
+        panelAcciones.add(btnRenovar);
+
+        btnRevocar = new JButton("Revocar");
+        btnRevocar.setBackground(new Color(178, 34, 34));
+        btnRevocar.setForeground(Color.WHITE);
+        btnRevocar.addActionListener(e -> revocarAutorizacion());
+        panelAcciones.add(btnRevocar);
+
+        panel.add(panelFiltros, BorderLayout.NORTH);
+        panel.add(scrollTabla, BorderLayout.CENTER);
+        panel.add(panelAcciones, BorderLayout.SOUTH);
+
+        return panel;
+    }
+
+    /**
+     * Busca un visitante por DNI.
+     */
+    private void buscarVisitante() {
+        String dni = txtDniVisitante.getText().trim();
+
+        if (dni.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                "Debe ingresar un DNI para buscar",
+                "Datos Incompletos",
+                JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        try {
+            visitanteSeleccionado = controlador.buscarVisitantePorDNI(dni);
+
+            if (visitanteSeleccionado == null) {
+                JOptionPane.showMessageDialog(this,
+                    "No se encontró ningún visitante con DNI: " + dni,
+                    "Visitante no encontrado",
+                    JOptionPane.INFORMATION_MESSAGE);
+                lblVisitanteSeleccionado.setText("Ningún visitante seleccionado");
+                lblVisitanteSeleccionado.setForeground(Color.GRAY);
+            } else {
+                lblVisitanteSeleccionado.setText(
+                    String.format("✓ %s (DNI: %s) - Estado: %s",
+                        visitanteSeleccionado.getNombreCompleto(),
+                        visitanteSeleccionado.getDni(),
+                        visitanteSeleccionado.getEstado()));
+                lblVisitanteSeleccionado.setForeground(new Color(34, 139, 34));
+            }
+
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this,
+                "Error al buscar visitante: " + ex.getMessage(),
+                "Error de Base de Datos",
+                JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    /**
+     * Busca un interno por legajo.
+     */
+    private void buscarInterno() {
+        String legajo = txtLegajoInterno.getText().trim();
+
+        if (legajo.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                "Debe ingresar un legajo para buscar",
+                "Datos Incompletos",
+                JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        try {
+            internoSeleccionado = controlador.buscarInternoPorLegajo(legajo);
+
+            if (internoSeleccionado == null) {
+                JOptionPane.showMessageDialog(this,
+                    "No se encontró ningún interno con legajo: " + legajo,
+                    "Interno no encontrado",
+                    JOptionPane.INFORMATION_MESSAGE);
+                lblInternoSeleccionado.setText("Ningún interno seleccionado");
+                lblInternoSeleccionado.setForeground(Color.GRAY);
+            } else {
+                lblInternoSeleccionado.setText(
+                    String.format("✓ %s (Legajo: %s) - Ubicación: %s, Piso %s",
+                        internoSeleccionado.getNombreCompleto(),
+                        internoSeleccionado.getNumeroLegajo(),
+                        internoSeleccionado.getPabellonActual() != null ?
+                            internoSeleccionado.getPabellonActual() : "N/A",
+                        internoSeleccionado.getPisoActual() != null ?
+                            internoSeleccionado.getPisoActual() : "N/A"));
+                lblInternoSeleccionado.setForeground(new Color(34, 139, 34));
+            }
+
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this,
+                "Error al buscar interno: " + ex.getMessage(),
+                "Error de Base de Datos",
+                JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    /**
+     * Crea una nueva autorización.
+     */
+    private void crearAutorizacion() {
+        // Validar que visitante e interno estén seleccionados
+        if (visitanteSeleccionado == null) {
+            JOptionPane.showMessageDialog(this,
+                "Debe buscar y seleccionar un visitante primero",
+                "Visitante no seleccionado",
+                JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        if (internoSeleccionado == null) {
+            JOptionPane.showMessageDialog(this,
+                "Debe buscar y seleccionar un interno primero",
+                "Interno no seleccionado",
+                JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // Obtener datos del formulario
+        TipoRelacion tipoRelacion = (TipoRelacion) cmbTipoRelacion.getSelectedItem();
+        String fechaVencimientoStr = txtFechaVencimiento.getText().trim();
+        String observaciones = txtObservaciones.getText().trim();
+
+        // Parsear fecha de vencimiento (si existe)
+        Date fechaVencimiento = null;
+        if (!fechaVencimientoStr.isEmpty()) {
+            try {
+                fechaVencimiento = DATE_FORMAT.parse(fechaVencimientoStr);
+            } catch (ParseException ex) {
+                JOptionPane.showMessageDialog(this,
+                    "Formato de fecha inválido. Use dd/MM/yyyy\nEjemplo: 31/12/2025",
+                    "Error en Fecha",
+                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        }
+
+        // Confirmar creación
+        int opcion = JOptionPane.showConfirmDialog(this,
+            String.format(
+                "¿Confirma la creación de esta autorización?\n\n" +
+                "Visitante: %s\n" +
+                "Interno: %s\n" +
+                "Relación: %s\n" +
+                "Vencimiento: %s\n",
+                visitanteSeleccionado.getNombreCompleto(),
+                internoSeleccionado.getNombreCompleto(),
+                tipoRelacion.getDescripcion(),
+                fechaVencimiento != null ? DATE_FORMAT.format(fechaVencimiento) : "Indefinida"),
+            "Confirmar Autorización",
+            JOptionPane.YES_NO_OPTION);
+
+        if (opcion != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        // Crear autorización
+        try {
+            Autorizacion nuevaAutorizacion = controlador.crearAutorizacion(
+                visitanteSeleccionado.getIdVisitante(),
+                internoSeleccionado.getIdInterno(),
+                tipoRelacion,
+                fechaVencimiento,
+                observaciones.isEmpty() ? null : observaciones
+            );
+
+            JOptionPane.showMessageDialog(this,
+                "Autorización creada exitosamente\n" +
+                "ID: " + nuevaAutorizacion.getIdAutorizacion(),
+                "Éxito",
+                JOptionPane.INFORMATION_MESSAGE);
+
+            limpiarFormulario();
+            cargarAutorizaciones();
+
+        } catch (IllegalStateException ex) {
+            // Autorización duplicada
+            JOptionPane.showMessageDialog(this,
+                ex.getMessage(),
+                "Autorización Duplicada",
+                JOptionPane.WARNING_MESSAGE);
+
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this,
+                "Error al crear autorización: " + ex.getMessage(),
+                "Error de Base de Datos",
+                JOptionPane.ERROR_MESSAGE);
+
+        } catch (IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(this,
+                ex.getMessage(),
+                "Datos Inválidos",
+                JOptionPane.WARNING_MESSAGE);
+        }
+    }
+
+    /**
+     * Limpia el formulario de nueva autorización.
+     */
+    private void limpiarFormulario() {
+        txtDniVisitante.setText("");
+        txtLegajoInterno.setText("");
+        visitanteSeleccionado = null;
+        internoSeleccionado = null;
+        lblVisitanteSeleccionado.setText("Ningún visitante seleccionado");
+        lblVisitanteSeleccionado.setForeground(Color.GRAY);
+        lblInternoSeleccionado.setText("Ningún interno seleccionado");
+        lblInternoSeleccionado.setForeground(Color.GRAY);
+        cmbTipoRelacion.setSelectedIndex(0);
+        txtFechaVencimiento.setText("");
+        txtObservaciones.setText("");
+    }
+
+    /**
+     * Carga las autorizaciones en la tabla.
+     */
+    private void cargarAutorizaciones() {
+        try {
+            // Limpiar tabla
+            modeloTabla.setRowCount(0);
+
+            // Obtener autorizaciones según filtro
+            List<Autorizacion> autorizaciones;
+            EstadoAutorizacion estadoFiltro = (EstadoAutorizacion) cmbFiltroEstado.getSelectedItem();
+
+            if (estadoFiltro == null) {
+                autorizaciones = controlador.listarTodasAutorizaciones();
+            } else {
+                autorizaciones = controlador.listarPorEstado(estadoFiltro);
+            }
+
+            // Cargar datos completos de visitantes e internos
+            controlador.cargarDatosCompletos(autorizaciones);
+
+            // Agregar a tabla
+            for (Autorizacion aut : autorizaciones) {
+                Object[] fila = {
+                    aut.getIdAutorizacion(),
+                    aut.getVisitante() != null ? aut.getVisitante().getNombreCompleto() : "N/A",
+                    aut.getVisitante() != null ? aut.getVisitante().getDni() : "N/A",
+                    aut.getInterno() != null ? aut.getInterno().getNombreCompleto() : "N/A",
+                    aut.getInterno() != null ? aut.getInterno().getNumeroLegajo() : "N/A",
+                    aut.getTipoRelacion() != null ? aut.getTipoRelacion().getDescripcion() : "N/A",
+                    aut.getFechaAutorizacion() != null ?
+                        DATE_FORMAT.format(aut.getFechaAutorizacion()) : "N/A",
+                    aut.getFechaVencimiento() != null ?
+                        DATE_FORMAT.format(aut.getFechaVencimiento()) : "Indefinida",
+                    aut.getEstado() != null ? aut.getEstado().name() : "N/A",
+                    aut.estaVigente() ? "SÍ" : "NO"
+                };
+                modeloTabla.addRow(fila);
+            }
+
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this,
+                "Error al cargar autorizaciones: " + ex.getMessage(),
+                "Error de Base de Datos",
+                JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    /**
+     * Suspende la autorización seleccionada.
+     */
+    private void suspenderAutorizacion() {
+        int filaSeleccionada = tblAutorizaciones.getSelectedRow();
+
+        if (filaSeleccionada < 0) {
+            JOptionPane.showMessageDialog(this,
+                "Debe seleccionar una autorización de la tabla",
+                "Ninguna autorización seleccionada",
+                JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        Long idAutorizacion = (Long) modeloTabla.getValueAt(filaSeleccionada, 0);
+
+        String motivo = JOptionPane.showInputDialog(this,
+            "Ingrese el motivo de la suspensión:",
+            "Suspender Autorización",
+            JOptionPane.QUESTION_MESSAGE);
+
+        if (motivo == null || motivo.trim().isEmpty()) {
+            return; // Usuario canceló o no ingresó motivo
+        }
+
+        try {
+            controlador.suspenderAutorizacion(idAutorizacion, motivo.trim());
+
+            JOptionPane.showMessageDialog(this,
+                "Autorización suspendida exitosamente",
+                "Éxito",
+                JOptionPane.INFORMATION_MESSAGE);
+
+            cargarAutorizaciones();
+
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this,
+                "Error al suspender autorización: " + ex.getMessage(),
+                "Error de Base de Datos",
+                JOptionPane.ERROR_MESSAGE);
+
+        } catch (IllegalStateException | IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(this,
+                ex.getMessage(),
+                "Error",
+                JOptionPane.WARNING_MESSAGE);
+        }
+    }
+
+    /**
+     * Reactiva la autorización seleccionada.
+     */
+    private void reactivarAutorizacion() {
+        int filaSeleccionada = tblAutorizaciones.getSelectedRow();
+
+        if (filaSeleccionada < 0) {
+            JOptionPane.showMessageDialog(this,
+                "Debe seleccionar una autorización de la tabla",
+                "Ninguna autorización seleccionada",
+                JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        Long idAutorizacion = (Long) modeloTabla.getValueAt(filaSeleccionada, 0);
+
+        int opcion = JOptionPane.showConfirmDialog(this,
+            "¿Confirma la reactivación de esta autorización?",
+            "Reactivar Autorización",
+            JOptionPane.YES_NO_OPTION);
+
+        if (opcion != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        try {
+            controlador.reactivarAutorizacion(idAutorizacion);
+
+            JOptionPane.showMessageDialog(this,
+                "Autorización reactivada exitosamente",
+                "Éxito",
+                JOptionPane.INFORMATION_MESSAGE);
+
+            cargarAutorizaciones();
+
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this,
+                "Error al reactivar autorización: " + ex.getMessage(),
+                "Error de Base de Datos",
+                JOptionPane.ERROR_MESSAGE);
+
+        } catch (IllegalStateException | IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(this,
+                ex.getMessage(),
+                "Error",
+                JOptionPane.WARNING_MESSAGE);
+        }
+    }
+
+    /**
+     * Renueva la autorización seleccionada.
+     */
+    private void renovarAutorizacion() {
+        int filaSeleccionada = tblAutorizaciones.getSelectedRow();
+
+        if (filaSeleccionada < 0) {
+            JOptionPane.showMessageDialog(this,
+                "Debe seleccionar una autorización de la tabla",
+                "Ninguna autorización seleccionada",
+                JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        Long idAutorizacion = (Long) modeloTabla.getValueAt(filaSeleccionada, 0);
+
+        String fechaStr = JOptionPane.showInputDialog(this,
+            "Ingrese la nueva fecha de vencimiento (dd/MM/yyyy):\n" +
+            "Dejar vacío para autorización indefinida",
+            "Renovar Autorización",
+            JOptionPane.QUESTION_MESSAGE);
+
+        if (fechaStr == null) {
+            return; // Usuario canceló
+        }
+
+        Date nuevaFecha = null;
+        if (!fechaStr.trim().isEmpty()) {
+            try {
+                nuevaFecha = DATE_FORMAT.parse(fechaStr.trim());
+            } catch (ParseException ex) {
+                JOptionPane.showMessageDialog(this,
+                    "Formato de fecha inválido. Use dd/MM/yyyy",
+                    "Error en Fecha",
+                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        }
+
+        try {
+            controlador.renovarAutorizacion(idAutorizacion, nuevaFecha);
+
+            JOptionPane.showMessageDialog(this,
+                "Autorización renovada exitosamente",
+                "Éxito",
+                JOptionPane.INFORMATION_MESSAGE);
+
+            cargarAutorizaciones();
+
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this,
+                "Error al renovar autorización: " + ex.getMessage(),
+                "Error de Base de Datos",
+                JOptionPane.ERROR_MESSAGE);
+
+        } catch (IllegalStateException | IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(this,
+                ex.getMessage(),
+                "Error",
+                JOptionPane.WARNING_MESSAGE);
+        }
+    }
+
+    /**
+     * Revoca la autorización seleccionada.
+     */
+    private void revocarAutorizacion() {
+        int filaSeleccionada = tblAutorizaciones.getSelectedRow();
+
+        if (filaSeleccionada < 0) {
+            JOptionPane.showMessageDialog(this,
+                "Debe seleccionar una autorización de la tabla",
+                "Ninguna autorización seleccionada",
+                JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        Long idAutorizacion = (Long) modeloTabla.getValueAt(filaSeleccionada, 0);
+
+        String motivo = JOptionPane.showInputDialog(this,
+            "ADVERTENCIA: La revocación es PERMANENTE.\n\n" +
+            "Ingrese el motivo de la revocación:",
+            "Revocar Autorización",
+            JOptionPane.WARNING_MESSAGE);
+
+        if (motivo == null || motivo.trim().isEmpty()) {
+            return; // Usuario canceló o no ingresó motivo
+        }
+
+        try {
+            controlador.revocarAutorizacion(idAutorizacion, motivo.trim());
+
+            JOptionPane.showMessageDialog(this,
+                "Autorización revocada exitosamente",
+                "Éxito",
+                JOptionPane.INFORMATION_MESSAGE);
+
+            cargarAutorizaciones();
+
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this,
+                "Error al revocar autorización: " + ex.getMessage(),
+                "Error de Base de Datos",
+                JOptionPane.ERROR_MESSAGE);
+
+        } catch (IllegalStateException | IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(this,
+                ex.getMessage(),
+                "Error",
+                JOptionPane.WARNING_MESSAGE);
+        }
     }
 }

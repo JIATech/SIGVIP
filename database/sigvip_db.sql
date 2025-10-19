@@ -169,3 +169,22 @@ CREATE TABLE auditoria (
     INDEX idx_tabla_operacion (tabla_afectada, tipo_operacion),
     FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario)
 ) ENGINE=InnoDB;
+
+-- ============================================
+-- TABLA: reportes_generados
+-- ============================================
+CREATE TABLE reportes_generados (
+    id_reporte BIGINT AUTO_INCREMENT PRIMARY KEY,
+    tipo_reporte ENUM('VISITAS_FECHA','VISITAS_VISITANTE','VISITAS_INTERNO',
+                      'ESTADISTICAS','RESTRICCIONES_ACTIVAS','AUTORIZACIONES_VIGENTES') NOT NULL,
+    titulo VARCHAR(200) NOT NULL,
+    parametros_filtro TEXT,
+    contenido LONGTEXT NOT NULL,
+    total_registros INT DEFAULT 0,
+    fecha_generacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    id_generado_por BIGINT NOT NULL,
+    INDEX idx_tipo_fecha (tipo_reporte, fecha_generacion),
+    INDEX idx_usuario_generador (id_generado_por),
+    INDEX idx_fecha_generacion (fecha_generacion),
+    FOREIGN KEY (id_generado_por) REFERENCES usuarios(id_usuario)
+) ENGINE=InnoDB;

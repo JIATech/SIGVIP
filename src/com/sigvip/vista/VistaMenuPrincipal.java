@@ -381,7 +381,9 @@ public class VistaMenuPrincipal extends JFrame {
     }
 
     private void verAutorizaciones() {
-        JOptionPane.showMessageDialog(this, "Funcionalidad en desarrollo");
+        // Reutiliza la misma vista que incluye tanto formulario como listado
+        VistaAutorizaciones vista = new VistaAutorizaciones(usuarioActual);
+        vista.setVisible(true);
     }
 
     private void verVisitasEnCurso() {
@@ -389,7 +391,8 @@ public class VistaMenuPrincipal extends JFrame {
     }
 
     private void gestionarUsuarios() {
-        JOptionPane.showMessageDialog(this, "Funcionalidad en desarrollo");
+        VistaGestionUsuarios vista = new VistaGestionUsuarios(usuarioActual);
+        vista.setVisible(true);
     }
 
     private void gestionarRestricciones() {

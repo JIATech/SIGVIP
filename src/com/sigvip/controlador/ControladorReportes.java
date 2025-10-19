@@ -1,27 +1,26 @@
 package com.sigvip.controlador;
 
 import com.sigvip.modelo.*;
-import com.sigvip.modelo.enums.*;
+import com.sigvip.modelo.enums.TipoReporte;
 import com.sigvip.persistencia.*;
+import com.sigvip.utilidades.GeneradorReportes;
 
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
- * Controlador para generación de reportes y consultas estadísticas.
- * Implementa la capa de control en el patrón MVC.
+ * Controlador para generación de reportes con HTML y persistencia en BD.
+ * Implementa RF007: Generar Reportes (versión con pantalla + BD).
  *
- * Especificación: PDF Sección 11.2.2 - Capa de Control
- * Funcionalidades:
- * - RF006: Historial de Visitas
- * - RF007: Reportes del Sistema
- * - RF009: Consulta de Información
+ * Funcionalidades principales:
+ * - Generación de reportes en formato HTML
+ * - Persistencia automática en base de datos
+ * - Historial de reportes generados
+ * - Soporte para impresión directa
+ *
+ * Enfoque: Reportes en pantalla + guardar en BD para auditoría.
  */
 public class ControladorReportes {
 
@@ -31,12 +30,13 @@ public class ControladorReportes {
     private AutorizacionDAO autorizacionDAO;
     private RestriccionDAO restriccionDAO;
     private UsuarioDAO usuarioDAO;
+    private ReporteDAO reporteDAO;
+    private GeneradorReportes generadorReportes;
 
     private SimpleDateFormat formatoFecha = new SimpleDateFormat("dd/MM/yyyy");
-    private SimpleDateFormat formatoHora = new SimpleDateFormat("HH:mm");
 
     /**
-     * Constructor que inicializa los DAOs.
+     * Constructor que inicializa los DAOs y el generador de reportes.
      */
     public ControladorReportes() {
         this.visitaDAO = new VisitaDAO();
@@ -45,355 +45,280 @@ public class ControladorReportes {
         this.autorizacionDAO = new AutorizacionDAO();
         this.restriccionDAO = new RestriccionDAO();
         this.usuarioDAO = new UsuarioDAO();
+        this.reporteDAO = new ReporteDAO();
+        this.generadorReportes = new GeneradorReportes();
     }
 
+    // ===== MÉTODOS PRINCIPALES DE GENERACIÓN DE REPORTES =====
+
     /**
-     * Genera reporte de visitas en un rango de fechas.
-     * Implementa RF006: Historial de Visitas.
+     * Genera reporte de visitas por rango de fechas.
      *
-     * @param fechaInicio fecha de inicio (inclusive)
-     * @param fechaFin fecha de fin (inclusive)
+     * @param fechaInicio fecha de inicio
+     * @param fechaFin fecha de fin
+     * @param estadoFiltro filtro por estado (null o "TODAS" para todos)
+     * @param idUsuarioGenerador ID del usuario que genera el reporte
+     * @return reporte generado con HTML persistido
+     * @throws SQLException si ocurre error en base de datos
      */
-    public void generarReporteVisitasPorFecha(Date fechaInicio, Date fechaFin) {
-        try {
-            List<Visita> visitas = visitaDAO.buscarPorRangoFechas(fechaInicio, fechaFin);
-
-            System.out.println("\n╔════════════════════════════════════════════════════════╗");
-            System.out.println("║        REPORTE DE VISITAS POR PERÍODO                 ║");
-            System.out.println("╚════════════════════════════════════════════════════════╝");
-            System.out.println("Período: " + formatoFecha.format(fechaInicio) +
-                             " al " + formatoFecha.format(fechaFin));
-            System.out.println("Total de visitas: " + visitas.size());
-            System.out.println("────────────────────────────────────────────────────────");
-
-            if (visitas.isEmpty()) {
-                System.out.println("No hay visitas registradas en este período.");
-            } else {
-                // Agrupar por estado
-                Map<EstadoVisita, Long> porEstado = visitas.stream()
-                    .collect(Collectors.groupingBy(Visita::getEstadoVisita, Collectors.counting()));
-
-                System.out.println("\nDistribución por estado:");
-                for (EstadoVisita estado : EstadoVisita.values()) {
-                    long count = porEstado.getOrDefault(estado, 0L);
-                    if (count > 0) {
-                        System.out.println("  " + estado + ": " + count);
-                    }
-                }
-
-                System.out.println("\nDetalle de visitas:");
-                for (Visita visita : visitas) {
-                    System.out.println("\n  ID: " + visita.getIdVisita());
-                    System.out.println("  Fecha: " + formatoFecha.format(visita.getFechaVisita()));
-                    System.out.println("  Ingreso: " + (visita.getHoraIngreso() != null ?
-                                                        formatoHora.format(visita.getHoraIngreso()) : "N/A"));
-                    System.out.println("  Egreso: " + (visita.getHoraEgreso() != null ?
-                                                       formatoHora.format(visita.getHoraEgreso()) : "En curso"));
-                    System.out.println("  Estado: " + visita.getEstadoVisita());
-                    System.out.println("  Duración: " + visita.getDuracionFormateada());
-                }
-            }
-
-            System.out.println("════════════════════════════════════════════════════════\n");
-
-        } catch (SQLException e) {
-            System.err.println("Error al generar reporte: " + e.getMessage());
-        }
+    public ReporteGenerado generarReporteVisitasPorFecha(Date fechaInicio, Date fechaFin,
+                                                        String estadoFiltro, Long idUsuarioGenerador)
+            throws SQLException {
+        return generadorReportes.generarReporteVisitasPorFecha(fechaInicio, fechaFin, estadoFiltro, idUsuarioGenerador);
     }
 
     /**
-     * Genera reporte de visitas de hoy.
-     * Implementa RF009: Consulta de Información - Visitas del día.
+     * Genera reporte de visitas por visitante específico.
+     *
+     * @param dniVisitante DNI del visitante
+     * @param fechaInicio fecha de inicio (opcional)
+     * @param fechaFin fecha de fin (opcional)
+     * @param idUsuarioGenerador ID del usuario que genera el reporte
+     * @return reporte generado con HTML persistido
+     * @throws SQLException si ocurre error en base de datos
      */
-    public void generarReporteVisitasHoy() {
-        Date hoy = new Date();
-        generarReporteVisitasPorFecha(hoy, hoy);
+    public ReporteGenerado generarReporteVisitasPorVisitante(String dniVisitante, Date fechaInicio,
+                                                            Date fechaFin, Long idUsuarioGenerador)
+            throws SQLException {
+        return generadorReportes.generarReporteVisitasPorVisitante(dniVisitante, fechaInicio, fechaFin, idUsuarioGenerador);
     }
 
     /**
-     * Genera reporte de visitantes por estado.
-     * Implementa RF007: Reportes del Sistema.
+     * Genera reporte de visitas por interno específico.
+     *
+     * @param legajoInterno Legajo del interno
+     * @param fechaInicio fecha de inicio (opcional)
+     * @param fechaFin fecha de fin (opcional)
+     * @param idUsuarioGenerador ID del usuario que genera el reporte
+     * @return reporte generado con HTML persistido
+     * @throws SQLException si ocurre error en base de datos
      */
-    public void generarReporteVisitantesPorEstado() {
-        try {
-            System.out.println("\n╔════════════════════════════════════════════════════════╗");
-            System.out.println("║      REPORTE DE VISITANTES POR ESTADO                 ║");
-            System.out.println("╚════════════════════════════════════════════════════════╝");
-
-            int total = visitanteDAO.contarTotal();
-            System.out.println("Total de visitantes: " + total);
-            System.out.println("────────────────────────────────────────────────────────");
-
-            for (EstadoVisitante estado : EstadoVisitante.values()) {
-                List<Visitante> visitantes = visitanteDAO.buscarPorEstado(estado);
-                System.out.println("\n" + estado + ": " + visitantes.size() + " visitantes");
-
-                if (!visitantes.isEmpty() && visitantes.size() <= 10) {
-                    for (Visitante v : visitantes) {
-                        System.out.println("  - " + v.getNombreCompleto() +
-                                         " (DNI: " + v.getDni() + ")");
-                    }
-                } else if (visitantes.size() > 10) {
-                    System.out.println("  (Mostrando primeros 10 de " + visitantes.size() + ")");
-                    for (int i = 0; i < 10; i++) {
-                        Visitante v = visitantes.get(i);
-                        System.out.println("  - " + v.getNombreCompleto() +
-                                         " (DNI: " + v.getDni() + ")");
-                    }
-                }
-            }
-
-            System.out.println("════════════════════════════════════════════════════════\n");
-
-        } catch (SQLException e) {
-            System.err.println("Error al generar reporte: " + e.getMessage());
-        }
+    public ReporteGenerado generarReporteVisitasPorInterno(String legajoInterno, Date fechaInicio,
+                                                          Date fechaFin, Long idUsuarioGenerador)
+            throws SQLException {
+        return generadorReportes.generarReporteVisitasPorInterno(legajoInterno, fechaInicio, fechaFin, idUsuarioGenerador);
     }
 
     /**
-     * Genera reporte de autorizaciones vigentes.
-     * Implementa RF007: Reportes del Sistema.
+     * Genera reporte de estadísticas generales de visitas.
+     *
+     * @param fechaInicio fecha de inicio del período
+     * @param fechaFin fecha de fin del período
+     * @param idUsuarioGenerador ID del usuario que genera el reporte
+     * @return reporte generado con HTML persistido
+     * @throws SQLException si ocurre error en base de datos
      */
-    public void generarReporteAutorizacionesVigentes() {
-        try {
-            List<Autorizacion> autorizaciones = autorizacionDAO.buscarPorEstado(
-                EstadoAutorizacion.VIGENTE
-            );
-
-            System.out.println("\n╔════════════════════════════════════════════════════════╗");
-            System.out.println("║     REPORTE DE AUTORIZACIONES VIGENTES                ║");
-            System.out.println("╚════════════════════════════════════════════════════════╝");
-            System.out.println("Total: " + autorizaciones.size());
-            System.out.println("────────────────────────────────────────────────────────");
-
-            // Agrupar por tipo de relación
-            Map<TipoRelacion, Long> porTipo = autorizaciones.stream()
-                .collect(Collectors.groupingBy(Autorizacion::getTipoRelacion, Collectors.counting()));
-
-            System.out.println("\nDistribución por tipo de relación:");
-            for (TipoRelacion tipo : TipoRelacion.values()) {
-                long count = porTipo.getOrDefault(tipo, 0L);
-                if (count > 0) {
-                    System.out.println("  " + tipo + ": " + count);
-                }
-            }
-
-            System.out.println("════════════════════════════════════════════════════════\n");
-
-        } catch (SQLException e) {
-            System.err.println("Error al generar reporte: " + e.getMessage());
-        }
+    public ReporteGenerado generarReporteEstadisticas(Date fechaInicio, Date fechaFin,
+                                                     Long idUsuarioGenerador) throws SQLException {
+        return generadorReportes.generarReporteEstadisticas(fechaInicio, fechaFin, idUsuarioGenerador);
     }
 
     /**
      * Genera reporte de restricciones activas.
-     * Implementa RF007: Reportes del Sistema.
-     */
-    public void generarReporteRestriccionesActivas() {
-        try {
-            int totalActivas = restriccionDAO.contarActivas();
-
-            System.out.println("\n╔════════════════════════════════════════════════════════╗");
-            System.out.println("║      REPORTE DE RESTRICCIONES ACTIVAS                 ║");
-            System.out.println("╚════════════════════════════════════════════════════════╝");
-            System.out.println("Total de restricciones activas: " + totalActivas);
-            System.out.println("────────────────────────────────────────────────────────");
-
-            // Mostrar por tipo
-            for (TipoRestriccion tipo : TipoRestriccion.values()) {
-                List<Restriccion> restricciones = restriccionDAO.buscarPorTipo(tipo);
-
-                // Filtrar solo las activas
-                List<Restriccion> activas = restricciones.stream()
-                    .filter(Restriccion::estaActiva)
-                    .collect(Collectors.toList());
-
-                if (!activas.isEmpty()) {
-                    System.out.println("\n" + tipo + ": " + activas.size());
-                }
-            }
-
-            System.out.println("════════════════════════════════════════════════════════\n");
-
-        } catch (SQLException e) {
-            System.err.println("Error al generar reporte: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Genera reporte de internos activos por establecimiento.
-     * Implementa RF009: Consulta de Información.
-     */
-    public void generarReporteInternosPorEstablecimiento() {
-        try {
-            List<Interno> internos = internoDAO.obtenerActivos();
-
-            System.out.println("\n╔════════════════════════════════════════════════════════╗");
-            System.out.println("║    REPORTE DE INTERNOS ACTIVOS                        ║");
-            System.out.println("╚════════════════════════════════════════════════════════╝");
-            System.out.println("Total de internos activos: " + internos.size());
-            System.out.println("────────────────────────────────────────────────────────");
-
-            // Agrupar por situación procesal
-            Map<SituacionProcesal, Long> porSituacion = internos.stream()
-                .filter(i -> i.getSituacionProcesal() != null)
-                .collect(Collectors.groupingBy(Interno::getSituacionProcesal, Collectors.counting()));
-
-            System.out.println("\nDistribución por situación procesal:");
-            for (SituacionProcesal situacion : SituacionProcesal.values()) {
-                long count = porSituacion.getOrDefault(situacion, 0L);
-                if (count > 0) {
-                    System.out.println("  " + situacion + ": " + count);
-                }
-            }
-
-            System.out.println("════════════════════════════════════════════════════════\n");
-
-        } catch (SQLException e) {
-            System.err.println("Error al generar reporte: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Genera reporte de usuarios por rol.
-     * Implementa RF007: Reportes del Sistema.
-     */
-    public void generarReporteUsuariosPorRol() {
-        try {
-            List<Usuario> usuarios = usuarioDAO.obtenerActivos();
-
-            System.out.println("\n╔════════════════════════════════════════════════════════╗");
-            System.out.println("║      REPORTE DE USUARIOS ACTIVOS                      ║");
-            System.out.println("╚════════════════════════════════════════════════════════╝");
-            System.out.println("Total de usuarios activos: " + usuarios.size());
-            System.out.println("────────────────────────────────────────────────────────");
-
-            for (Rol rol : Rol.values()) {
-                int count = usuarioDAO.contarPorRol(rol);
-                if (count > 0) {
-                    System.out.println("\n" + rol + ": " + count + " usuarios");
-
-                    List<Usuario> usuariosPorRol = usuarioDAO.buscarPorRol(rol);
-                    for (Usuario u : usuariosPorRol) {
-                        System.out.println("  - " + u.getNombreCompleto() +
-                                         " (" + u.getNombreUsuario() + ")");
-                    }
-                }
-            }
-
-            System.out.println("════════════════════════════════════════════════════════\n");
-
-        } catch (SQLException e) {
-            System.err.println("Error al generar reporte: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Genera dashboard con estadísticas generales del sistema.
-     * Implementa RF007: Reportes del Sistema - Vista general.
-     */
-    public void generarDashboardGeneral() {
-        try {
-            System.out.println("\n╔═══════════════════════════════════════════════════════════════╗");
-            System.out.println("║                  DASHBOARD DEL SISTEMA                        ║");
-            System.out.println("╚═══════════════════════════════════════════════════════════════╝");
-
-            // Estadísticas de visitantes
-            int totalVisitantes = visitanteDAO.contarTotal();
-            List<Visitante> habilitados = visitanteDAO.buscarPorEstado(EstadoVisitante.HABILITADO);
-
-            System.out.println("\n📋 VISITANTES");
-            System.out.println("  Total registrados: " + totalVisitantes);
-            System.out.println("  Habilitados: " + habilitados.size());
-
-            // Estadísticas de internos
-            List<Interno> internosActivos = internoDAO.obtenerActivos();
-
-            System.out.println("\n👤 INTERNOS");
-            System.out.println("  Activos: " + internosActivos.size());
-
-            // Estadísticas de visitas
-            int visitasEnCurso = visitaDAO.contarVisitasEnCurso();
-            List<Visita> visitasHoy = visitaDAO.buscarPorFecha(new Date());
-
-            System.out.println("\n🚪 VISITAS");
-            System.out.println("  En curso ahora: " + visitasEnCurso);
-            System.out.println("  Total de hoy: " + visitasHoy.size());
-
-            // Estadísticas de autorizaciones
-            List<Autorizacion> autorizacionesVigentes = autorizacionDAO.buscarPorEstado(
-                EstadoAutorizacion.VIGENTE
-            );
-
-            System.out.println("\n✓ AUTORIZACIONES");
-            System.out.println("  Vigentes: " + autorizacionesVigentes.size());
-
-            // Advertencias de autorizaciones próximas a vencer
-            List<Autorizacion> proximasVencer = autorizacionDAO.obtenerProximasAVencer(30);
-            if (!proximasVencer.isEmpty()) {
-                System.out.println("  ⚠ Próximas a vencer (30 días): " + proximasVencer.size());
-            }
-
-            // Estadísticas de restricciones
-            int restriccionesActivas = restriccionDAO.contarActivas();
-
-            System.out.println("\n🚫 RESTRICCIONES");
-            System.out.println("  Activas: " + restriccionesActivas);
-
-            // Estadísticas de usuarios
-            List<Usuario> usuariosActivos = usuarioDAO.obtenerActivos();
-
-            System.out.println("\n👮 USUARIOS");
-            System.out.println("  Activos: " + usuariosActivos.size());
-
-            System.out.println("\n═══════════════════════════════════════════════════════════════");
-            System.out.println("Fecha y hora: " + new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new Date()));
-            System.out.println("═══════════════════════════════════════════════════════════════\n");
-
-        } catch (SQLException e) {
-            System.err.println("Error al generar dashboard: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Genera reporte del historial de visitas de un visitante.
-     * Implementa RF006: Historial de Visitas.
      *
-     * @param dniVisitante DNI del visitante
+     * @param idUsuarioGenerador ID del usuario que genera el reporte
+     * @return reporte generado con HTML persistido
+     * @throws SQLException si ocurre error en base de datos
      */
-    public void generarHistorialVisitante(String dniVisitante) {
+    public ReporteGenerado generarReporteRestriccionesActivas(Long idUsuarioGenerador) throws SQLException {
+        return generadorReportes.generarReporteRestriccionesActivas(idUsuarioGenerador);
+    }
+
+    /**
+     * Genera reporte de autorizaciones vigentes.
+     *
+     * @param idUsuarioGenerador ID del usuario que genera el reporte
+     * @return reporte generado con HTML persistido
+     * @throws SQLException si ocurre error en base de datos
+     */
+    public ReporteGenerado generarReporteAutorizacionesVigentes(Long idUsuarioGenerador) throws SQLException {
+        return generadorReportes.generarReporteAutorizacionesVigentes(idUsuarioGenerador);
+    }
+
+    // ===== MÉTODOS DE CONSULTA DE REPORTES =====
+
+    /**
+     * Obtiene el historial completo de reportes generados.
+     *
+     * @return lista de todos los reportes ordenados por fecha descendente
+     * @throws SQLException si ocurre error en base de datos
+     */
+    public List<ReporteGenerado> obtenerHistorialReportes() throws SQLException {
+        return reporteDAO.obtenerTodos();
+    }
+
+    /**
+     * Obtiene reportes generados por un usuario específico.
+     *
+     * @param idUsuario ID del usuario
+     * @return lista de reportes del usuario
+     * @throws SQLException si ocurre error en base de datos
+     */
+    public List<ReporteGenerado> obtenerReportesPorUsuario(Long idUsuario) throws SQLException {
+        return reporteDAO.obtenerPorUsuario(idUsuario);
+    }
+
+    /**
+     * Obtiene reportes por tipo específico.
+     *
+     * @param tipoReporte tipo de reporte
+     * @return lista de reportes de ese tipo
+     * @throws SQLException si ocurre error en base de datos
+     */
+    public List<ReporteGenerado> obtenerReportesPorTipo(TipoReporte tipoReporte) throws SQLException {
+        return reporteDAO.obtenerPorTipo(tipoReporte);
+    }
+
+    /**
+     * Obtiene reportes generados en los últimos N días.
+     *
+     * @param días número de días hacia atrás
+     * @return lista de reportes recientes
+     * @throws SQLException si ocurre error en base de datos
+     */
+    public List<ReporteGenerado> obtenerReportesRecientes(int días) throws SQLException {
+        return reporteDAO.obtenerRecientes(días);
+    }
+
+    /**
+     * Busca un reporte específico por su ID.
+     *
+     * @param idReporte ID del reporte
+     * @return reporte encontrado o null si no existe
+     * @throws SQLException si ocurre error en base de datos
+     */
+    public ReporteGenerado buscarReportePorId(Long idReporte) throws SQLException {
+        return reporteDAO.buscarPorId(idReporte);
+    }
+
+    // ===== MÉTODOS DE ESTADÍSTICAS =====
+
+    /**
+     * Obtiene estadísticas generales de reportes.
+     *
+     * @return mapa con estadísticas por tipo de reporte
+     * @throws SQLException si ocurre error en base de datos
+     */
+    public java.util.Map<String, Integer> obtenerEstadisticasReportes() throws SQLException {
+        return reporteDAO.obtenerEstadisticasPorTipo();
+    }
+
+    /**
+     * Cuenta el total de reportes generados.
+     *
+     * @return número total de reportes
+     * @throws SQLException si ocurre error en base de datos
+     */
+    public int contarTotalReportes() throws SQLException {
+        return reporteDAO.contarTotal();
+    }
+
+    // ===== MÉTODOS DE MANTENIMIENTO =====
+
+    /**
+     * Limpia reportes antiguos para liberar espacio.
+     *
+     * @param díasAntigüedad eliminar reportes más antiguos que estos días
+     * @return número de reportes eliminados
+     * @throws SQLException si ocurre error en base de datos
+     */
+    public int limpiarReportesAntiguos(int díasAntigüedad) throws SQLException {
+        return reporteDAO.limpiarAntiguos(díasAntigüedad);
+    }
+
+    // ===== MÉTODOS AUXILIARES PARA VISTAS =====
+
+    /**
+     * Obtiene las fechas por defecto para reportes (últimos 30 días).
+     *
+     * @return array con [fechaInicio, fechaFin]
+     */
+    public Date[] obtenerFechasPorDefecto() {
+        Date fechaFin = new Date();
+        Date fechaInicio = new Date(fechaFin.getTime() - (30L * 24 * 60 * 60 * 1000)); // 30 días atrás
+        return new Date[]{fechaInicio, fechaFin};
+    }
+
+    /**
+     * Obtiene la lista de visitantes disponibles para filtros.
+     *
+     * @return lista de todos los visitantes
+     * @throws SQLException si ocurre error en base de datos
+     */
+    public List<Visitante> obtenerVisitantesDisponibles() throws SQLException {
+        return visitanteDAO.obtenerTodos();
+    }
+
+    /**
+     * Obtiene la lista de internos disponibles para filtros.
+     *
+     * @return lista de todos los internos
+     * @throws SQLException si ocurre error en base de datos
+     */
+    public List<Interno> obtenerInternosDisponibles() throws SQLException {
+        return internoDAO.obtenerTodos();
+    }
+
+    /**
+     * Valida los parámetros de un reporte.
+     *
+     * @param fechaInicio fecha de inicio
+     * @param fechaFin fecha de fin
+     * @return mensaje de error o null si es válido
+     */
+    public String validarParametrosReporte(Date fechaInicio, Date fechaFin) {
+        if (fechaInicio == null) {
+            return "La fecha de inicio es obligatoria";
+        }
+        if (fechaFin == null) {
+            return "La fecha de fin es obligatoria";
+        }
+        if (fechaInicio.after(fechaFin)) {
+            return "La fecha de inicio no puede ser posterior a la fecha de fin";
+        }
+
+        // Validar que no sea un rango muy grande (más de 1 año)
+        long unAnioEnMs = 365L * 24 * 60 * 60 * 1000;
+        if (fechaFin.getTime() - fechaInicio.getTime() > unAnioEnMs) {
+            return "El rango de fechas no puede superar un año";
+        }
+
+        return null; // Válido
+    }
+
+    /**
+     * Formatea una fecha para mostrar en la interfaz.
+     *
+     * @param fecha fecha a formatear
+     * @return fecha formateada como dd/MM/yyyy
+     */
+    public String formatearFecha(Date fecha) {
+        if (fecha == null) {
+            return "";
+        }
+        return formatoFecha.format(fecha);
+    }
+
+    // ===== MÉTODOS HEREDADOS (compatibilidad con versiones anteriores) =====
+
+    /**
+     * Genera reporte de visitas por fecha (método de compatibilidad).
+     * @deprecated Usar generarReporteVisitasPorFecha con persistencia
+     */
+    @Deprecated
+    public void generarReporteVisitasPorFecha(Date fechaInicio, Date fechaFin) {
         try {
-            Visitante visitante = visitanteDAO.buscarPorDni(dniVisitante);
-
-            if (visitante == null) {
-                System.out.println("No se encontró visitante con DNI: " + dniVisitante);
-                return;
-            }
-
-            List<Visita> visitas = visitaDAO.buscarPorVisitante(visitante.getIdVisitante());
-
-            System.out.println("\n╔════════════════════════════════════════════════════════╗");
-            System.out.println("║        HISTORIAL DE VISITAS                           ║");
+            System.out.println("╔════════════════════════════════════════════════════════╗");
+            System.out.println("║        REPORTE DE VISITAS POR PERÍODO                 ║");
             System.out.println("╚════════════════════════════════════════════════════════╝");
-            System.out.println("Visitante: " + visitante.getNombreCompleto());
-            System.out.println("DNI: " + visitante.getDni());
+            System.out.println("Período: " + formatoFecha.format(fechaInicio) +
+                             " al " + formatoFecha.format(fechaFin));
+
+            List<Visita> visitas = visitaDAO.buscarPorRangoFechas(fechaInicio, fechaFin);
             System.out.println("Total de visitas: " + visitas.size());
-            System.out.println("────────────────────────────────────────────────────────");
-
-            if (visitas.isEmpty()) {
-                System.out.println("No hay visitas registradas.");
-            } else {
-                for (Visita visita : visitas) {
-                    System.out.println("\n  Fecha: " + formatoFecha.format(visita.getFechaVisita()));
-                    System.out.println("  Estado: " + visita.getEstadoVisita());
-                    System.out.println("  Duración: " + visita.getDuracionFormateada());
-                }
-            }
-
             System.out.println("════════════════════════════════════════════════════════\n");
-
         } catch (SQLException e) {
-            System.err.println("Error al generar historial: " + e.getMessage());
+            System.err.println("Error al generar reporte: " + e.getMessage());
         }
     }
 }
