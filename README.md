@@ -43,7 +43,7 @@ SIGVIP es un sistema de escritorio desarrollado en Java para la gestión integra
 - **MySQL 8.0** (charset utf8mb4)
 - **Swing** (GUI - sin dependencias externas)
 - **JDBC** puro (sin ORM - restricción académica)
-- **MySQL Connector/J 8.0**
+- **MySQL Connector/J 9.4.0**
 
 ## 🏗️ Arquitectura
 
@@ -103,7 +103,7 @@ mysql -u root -p -e "USE sigvip_db; SHOW TABLES;"
 
 1. Ir a: https://dev.mysql.com/downloads/connector/j/
 2. Seleccionar "Platform Independent" y descargar el ZIP
-3. Extraer el archivo `mysql-connector-j-8.x.x.jar`
+3. Extraer el archivo `mysql-connector-j-9.4.0.jar` (o versión más reciente)
 4. Copiar el JAR a la carpeta `lib/` del proyecto
 5. **En IntelliJ IDEA**:
    - Abrir `File → Project Structure → Libraries`
@@ -384,7 +384,7 @@ SIGVIP/
 ├── resources/
 │   └── config.properties              # Configuración BD
 ├── lib/
-│   └── mysql-connector-j-8.x.x.jar    # Driver JDBC
+│   └── mysql-connector-j-9.4.0.jar    # Driver JDBC
 ├── database/
 │   ├── sigvip_db.sql                  # Schema
 │   ├── datos_de_prueba.sql            # Datos iniciales

@@ -2,12 +2,12 @@
 
 ## Required: MySQL Connector/J
 
-Download MySQL Connector/J 8.0.x from:
+Download MySQL Connector/J 9.4.0 from:
 https://dev.mysql.com/downloads/connector/j/
 
 **Instructions:**
 1. Download the platform-independent ZIP archive
-2. Extract `mysql-connector-java-8.0.xx.jar`
+2. Extract `mysql-connector-j-9.4.0.jar` (o versión más reciente)
 3. Place it in this `lib/` directory
 4. In IntelliJ IDEA:
    - File → Project Structure → Libraries
@@ -19,9 +19,9 @@ https://dev.mysql.com/downloads/connector/j/
 Add to pom.xml (if created):
 ```xml
 <dependency>
-    <groupId>mysql</groupId>
-    <artifactId>mysql-connector-java</artifactId>
-    <version>8.0.33</version>
+    <groupId>com.mysql</groupId>
+    <artifactId>mysql-connector-j</artifactId>
+    <version>9.4.0</version>
 </dependency>
 ```
 

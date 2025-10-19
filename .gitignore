@@ -31,3 +31,4 @@ bin/
 .c*
 C*.md
 *.ps1
+lib/mysql-connector-j-9.4.0.jar
