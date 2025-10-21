@@ -457,7 +457,7 @@ public class VistaMenuPrincipal extends JFrame {
                         "Seminario de Práctica de Informática\n\n" +
                         "Estudiante: Arnaboldi, Juan Ignacio\n" +
                         "Profesor: Marcos Darío Aranda\n\n" +
-                        "2024";
+                        "2025";
 
         JOptionPane.showMessageDialog(
             this,
