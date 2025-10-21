@@ -4,11 +4,11 @@ import com.sigvip.controlador.ControladorVisitantes;
 import com.sigvip.modelo.Usuario;
 import com.sigvip.modelo.Visitante;
 import com.sigvip.modelo.enums.EstadoVisitante;
+import com.sigvip.utilidades.TemaColors;
+import com.sigvip.vista.componentes.JDatePicker;
 
 import javax.swing.*;
 import java.awt.*;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
@@ -32,15 +32,13 @@ public class VistaRegistroVisitante extends JFrame {
     private JTextField txtDni;
     private JTextField txtApellido;
     private JTextField txtNombre;
-    private JTextField txtFechaNacimiento; // Formato dd/MM/yyyy
+    private JDatePicker datePickerFechaNacimiento; // Selector de fecha visual
     private JTextField txtTelefono;
     private JTextField txtDomicilio;
     private JComboBox<EstadoVisitante> cboEstado;
     private JButton btnGuardar;
     private JButton btnLimpiar;
     private JButton btnCerrar;
-
-    private SimpleDateFormat formatoFecha = new SimpleDateFormat("dd/MM/yyyy");
 
     /**
      * Constructor que inicializa la vista.
@@ -50,7 +48,6 @@ public class VistaRegistroVisitante extends JFrame {
     public VistaRegistroVisitante(Usuario usuario) {
         this.usuarioActual = usuario;
         this.controlador = new ControladorVisitantes();
-        formatoFecha.setLenient(false); // Validación estricta de fechas
         inicializarComponentes();
         configurarVentana();
     }
@@ -72,6 +69,7 @@ public class VistaRegistroVisitante extends JFrame {
     private void inicializarComponentes() {
         JPanel panelPrincipal = new JPanel(new BorderLayout(10, 10));
         panelPrincipal.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        panelPrincipal.setBackground(TemaColors.FONDO_PRINCIPAL);
 
         // Panel de información
         JPanel panelInfo = crearPanelInformacion();
@@ -94,21 +92,23 @@ public class VistaRegistroVisitante extends JFrame {
     private JPanel crearPanelInformacion() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(52, 152, 219), 2),
+            BorderFactory.createLineBorder(TemaColors.SECUNDARIO, 2),
             BorderFactory.createEmptyBorder(10, 10, 10, 10)
         ));
-        panel.setBackground(new Color(232, 243, 251));
+        panel.setBackground(TemaColors.FONDO_PANEL);
 
         JTextArea txtInfo = new JTextArea(
             "REGISTRO DE NUEVO VISITANTE (RF001)\n\n" +
             "Requisitos:\n" +
             "• El visitante debe ser mayor de 18 años\n" +
             "• El DNI debe ser único en el sistema\n" +
-            "• Los campos marcados con (*) son obligatorios"
+            "• Los campos marcados con (*) son obligatorios\n" +
+            "• Use el botón 'Cal' para seleccionar fechas"
         );
         txtInfo.setEditable(false);
         txtInfo.setOpaque(false);
         txtInfo.setFont(new Font("Arial", Font.PLAIN, 11));
+        txtInfo.setForeground(TemaColors.TEXTO_PRIMARIO);
         panel.add(txtInfo, BorderLayout.CENTER);
 
         return panel;
@@ -119,7 +119,15 @@ public class VistaRegistroVisitante extends JFrame {
      */
     private JPanel crearPanelFormulario() {
         JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBorder(BorderFactory.createTitledBorder("Datos del Visitante"));
+        panel.setBorder(BorderFactory.createTitledBorder(
+            BorderFactory.createLineBorder(TemaColors.PRIMARIO, 1),
+            "Datos del Visitante",
+            javax.swing.border.TitledBorder.LEFT,
+            javax.swing.border.TitledBorder.TOP,
+            new Font("Arial", Font.BOLD, 12),
+            TemaColors.PRIMARIO
+        ));
+        panel.setBackground(TemaColors.FONDO_PANEL);
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -139,8 +147,15 @@ public class VistaRegistroVisitante extends JFrame {
             txtNombre = crearTextField(30, "Nombre del visitante"));
 
         // Fecha de Nacimiento (*)
-        agregarCampo(panel, gbc, fila++, "Fecha Nacimiento: *",
-            txtFechaNacimiento = crearTextField(20, "Formato: dd/MM/yyyy (ej: 15/03/1990)"));
+        gbc.gridx = 0;
+        gbc.gridy = fila++;
+        gbc.weightx = 0.3;
+        panel.add(new JLabel("Fecha Nacimiento: *"), gbc);
+
+        gbc.gridx = 1;
+        gbc.weightx = 0.7;
+        datePickerFechaNacimiento = new JDatePicker();
+        panel.add(datePickerFechaNacimiento, gbc);
 
         // Teléfono
         agregarCampo(panel, gbc, fila++, "Teléfono:",
@@ -173,7 +188,9 @@ public class VistaRegistroVisitante extends JFrame {
         gbc.gridx = 0;
         gbc.gridy = fila;
         gbc.weightx = 0.3;
-        panel.add(new JLabel(etiqueta), gbc);
+        JLabel lblEtiqueta = new JLabel(etiqueta);
+        lblEtiqueta.setForeground(TemaColors.TEXTO_PRIMARIO);
+        panel.add(lblEtiqueta, gbc);
 
         gbc.gridx = 1;
         gbc.weightx = 0.7;
@@ -194,20 +211,21 @@ public class VistaRegistroVisitante extends JFrame {
      */
     private JPanel crearPanelBotones() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        panel.setBackground(TemaColors.FONDO_PRINCIPAL);
 
         btnLimpiar = new JButton("Limpiar");
         btnLimpiar.setPreferredSize(new Dimension(100, 30));
+        TemaColors.aplicarEstiloBotonCancelar(btnLimpiar);
         btnLimpiar.addActionListener(e -> limpiarFormulario());
 
         btnCerrar = new JButton("Cerrar");
         btnCerrar.setPreferredSize(new Dimension(100, 30));
+        TemaColors.aplicarEstiloBotonCancelar(btnCerrar);
         btnCerrar.addActionListener(e -> dispose());
 
         btnGuardar = new JButton("Guardar");
         btnGuardar.setPreferredSize(new Dimension(100, 30));
-        btnGuardar.setBackground(new Color(46, 204, 113));
-        btnGuardar.setForeground(Color.WHITE);
-        btnGuardar.setFocusPainted(false);
+        TemaColors.aplicarEstiloBotonAccion(btnGuardar);
         btnGuardar.addActionListener(e -> guardarVisitante());
 
         panel.add(btnLimpiar);
@@ -234,15 +252,9 @@ public class VistaRegistroVisitante extends JFrame {
             visitante.setApellido(txtApellido.getText().trim().toUpperCase());
             visitante.setNombre(txtNombre.getText().trim().toUpperCase());
 
-            // Parsear y validar fecha de nacimiento
-            try {
-                Date fechaNac = formatoFecha.parse(txtFechaNacimiento.getText().trim());
-                visitante.setFechaNacimiento(fechaNac);
-            } catch (ParseException e) {
-                mostrarError("Formato de fecha inválido.\nUse dd/MM/yyyy (ej: 15/03/1990)");
-                txtFechaNacimiento.requestFocus();
-                return;
-            }
+            // Obtener fecha del selector (validación automática)
+            Date fechaNac = datePickerFechaNacimiento.getFecha();
+            visitante.setFechaNacimiento(fechaNac);
 
             // Validar edad mínima (18 años) - RF001
             if (!visitante.esMayorDeEdad()) {
@@ -262,6 +274,9 @@ public class VistaRegistroVisitante extends JFrame {
                 visitante.setDomicilio(domicilio);
             }
 
+            // Email no está en el formulario actual, se deja null
+            visitante.setEmail(null);
+
             visitante.setEstado((EstadoVisitante) cboEstado.getSelectedItem());
             visitante.setFechaRegistro(new Date());
 
@@ -273,7 +288,16 @@ public class VistaRegistroVisitante extends JFrame {
             SwingWorker<Boolean, Void> worker = new SwingWorker<>() {
                 @Override
                 protected Boolean doInBackground() {
-                    return controlador.registrarVisitante(visitante);
+                    Long id = controlador.registrarVisitante(
+                        visitante.getDni(),
+                        visitante.getApellido(),
+                        visitante.getNombre(),
+                        visitante.getFechaNacimiento(),
+                        visitante.getTelefono(),
+                        visitante.getEmail(),
+                        visitante.getDomicilio()
+                    );
+                    return id != null;
                 }
 
                 @Override
@@ -333,9 +357,8 @@ public class VistaRegistroVisitante extends JFrame {
             return false;
         }
 
-        if (txtFechaNacimiento.getText().trim().isEmpty()) {
+        if (datePickerFechaNacimiento.getFecha() == null) {
             mostrarError("La fecha de nacimiento es obligatoria");
-            txtFechaNacimiento.requestFocus();
             return false;
         }
 
@@ -349,7 +372,7 @@ public class VistaRegistroVisitante extends JFrame {
         txtDni.setText("");
         txtApellido.setText("");
         txtNombre.setText("");
-        txtFechaNacimiento.setText("");
+        datePickerFechaNacimiento.limpiar(); // Restablecer a fecha actual
         txtTelefono.setText("");
         txtDomicilio.setText("");
         cboEstado.setSelectedItem(EstadoVisitante.ACTIVO);

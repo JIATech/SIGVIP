@@ -2,6 +2,8 @@ package com.sigvip.vista;
 
 import com.sigvip.modelo.Usuario;
 import com.sigvip.modelo.enums.Rol;
+import com.sigvip.persistencia.GestorModo;
+import com.sigvip.utilidades.TemaColors;
 
 import javax.swing.*;
 import java.awt.*;
@@ -42,10 +44,16 @@ public class VistaMenuPrincipal extends JFrame {
      * Configura las propiedades de la ventana.
      */
     private void configurarVentana() {
-        setTitle("SIGVIP - Sistema de Gestión de Visitas Penitenciarias");
+        // Agregar indicador de modo offline en el título si aplica
+        String titulo = "SIGVIP - Sistema de Gestión de Visitas Penitenciarias";
+        if (GestorModo.getInstancia().isModoOffline()) {
+            titulo += " [MODO OFFLINE]";
+        }
+
+        setTitle(titulo);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1000, 700);
-        setMinimumSize(new Dimension(800, 600));
+        setSize(1100, 750);
+        setMinimumSize(new Dimension(900, 650));
         setLocationRelativeTo(null);
     }
 
@@ -66,6 +74,9 @@ public class VistaMenuPrincipal extends JFrame {
         // Panel central con accesos directos
         panelCentral = crearPanelCentral();
         panelPrincipal.add(panelCentral, BorderLayout.CENTER);
+
+        // Configurar color de fondo principal
+        panelPrincipal.setBackground(TemaColors.FONDO_PRINCIPAL);
 
         // Barra de estado
         JPanel panelEstado = crearPanelEstado();
@@ -171,7 +182,7 @@ public class VistaMenuPrincipal extends JFrame {
      */
     private JPanel crearPanelEncabezado() {
         JPanel panel = new JPanel();
-        panel.setBackground(new Color(41, 128, 185));
+        panel.setBackground(TemaColors.FONDO_ENCABEZADO);
         panel.setPreferredSize(new Dimension(0, 80));
         panel.setLayout(new BorderLayout());
         panel.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
@@ -179,12 +190,12 @@ public class VistaMenuPrincipal extends JFrame {
         // Título
         JLabel lblTitulo = new JLabel("SIGVIP");
         lblTitulo.setFont(new Font("Arial", Font.BOLD, 28));
-        lblTitulo.setForeground(Color.WHITE);
+        lblTitulo.setForeground(Color.WHITE); // Texto blanco sobre fondo negro
 
         // Subtítulo
         JLabel lblSubtitulo = new JLabel("Sistema de Gestión de Visitas Penitenciarias");
         lblSubtitulo.setFont(new Font("Arial", Font.PLAIN, 14));
-        lblSubtitulo.setForeground(Color.WHITE);
+        lblSubtitulo.setForeground(Color.WHITE); // Texto blanco sobre fondo negro
 
         // Panel de títulos
         JPanel panelTitulos = new JPanel(new GridLayout(2, 1));
@@ -202,8 +213,11 @@ public class VistaMenuPrincipal extends JFrame {
      */
     private JPanel crearPanelCentral() {
         JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        panel.setBackground(Color.WHITE);
+        panel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(TemaColors.PRIMARIO, 1),
+            BorderFactory.createEmptyBorder(20, 20, 20, 20)
+        ));
+        panel.setBackground(TemaColors.FONDO_PANEL);
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 10, 10);
@@ -217,7 +231,7 @@ public class VistaMenuPrincipal extends JFrame {
         panel.add(crearBotonAccesoDirecto(
             "Control de Acceso",
             "Registrar ingreso y egreso de visitantes",
-            new Color(46, 204, 113),
+            TemaColors.BOTON_ACCION,
             () -> abrirControlAcceso()
         ), gbc);
 
@@ -227,7 +241,7 @@ public class VistaMenuPrincipal extends JFrame {
         panel.add(crearBotonAccesoDirecto(
             "Registrar Visitante",
             "Dar de alta nuevos visitantes",
-            new Color(52, 152, 219),
+            TemaColors.BOTON_ACCION,
             () -> abrirRegistroVisitante()
         ), gbc);
 
@@ -237,7 +251,7 @@ public class VistaMenuPrincipal extends JFrame {
         panel.add(crearBotonAccesoDirecto(
             "Autorizaciones",
             "Gestionar autorizaciones de visita",
-            new Color(155, 89, 182),
+            TemaColors.BOTON_ACCION,
             () -> abrirNuevaAutorizacion()
         ), gbc);
 
@@ -247,7 +261,7 @@ public class VistaMenuPrincipal extends JFrame {
         panel.add(crearBotonAccesoDirecto(
             "Reportes",
             "Generar e imprimir reportes",
-            new Color(230, 126, 34),
+            TemaColors.BOTON_ACCION,
             () -> abrirReportes()
         ), gbc);
 
@@ -255,30 +269,30 @@ public class VistaMenuPrincipal extends JFrame {
     }
 
     /**
-     * Crea un botón de acceso directo con estilo personalizado.
+     * Crea un botón de acceso directo con estilo blanco y negro.
      */
     private JButton crearBotonAccesoDirecto(String titulo, String descripcion,
                                            Color color, Runnable accion) {
         JButton boton = new JButton();
         boton.setLayout(new BorderLayout(10, 5));
-        boton.setBackground(color);
-        boton.setForeground(Color.WHITE);
+        boton.setBackground(Color.WHITE); // Fondo blanco
+        boton.setForeground(Color.BLACK); // Texto negro
         boton.setFocusPainted(false);
         boton.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(color.darker(), 2),
-            BorderFactory.createEmptyBorder(15, 15, 15, 15)
+            BorderFactory.createLineBorder(Color.BLACK, 2), // Borde negro
+            BorderFactory.createEmptyBorder(20, 25, 20, 25)
         ));
 
         // Título
         JLabel lblTitulo = new JLabel(titulo);
         lblTitulo.setFont(new Font("Arial", Font.BOLD, 18));
-        lblTitulo.setForeground(Color.WHITE);
+        lblTitulo.setForeground(Color.BLACK); // Texto negro
         lblTitulo.setHorizontalAlignment(SwingConstants.CENTER);
 
         // Descripción
         JLabel lblDescripcion = new JLabel(descripcion);
         lblDescripcion.setFont(new Font("Arial", Font.PLAIN, 12));
-        lblDescripcion.setForeground(Color.WHITE);
+        lblDescripcion.setForeground(Color.BLACK); // Texto negro
         lblDescripcion.setHorizontalAlignment(SwingConstants.CENTER);
 
         // Panel con texto
@@ -311,24 +325,60 @@ public class VistaMenuPrincipal extends JFrame {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createMatteBorder(1, 0, 0, 0, Color.LIGHT_GRAY),
-            BorderFactory.createEmptyBorder(5, 10, 5, 10)
+            BorderFactory.createEmptyBorder(8, 15, 8, 15)
         ));
+        panel.setBackground(TemaColors.FONDO_PANEL);
 
-        // Información del usuario
+        // Información del usuario con mejor espaciado
         lblUsuario = new JLabel("Usuario: " + usuarioActual.getNombreCompleto());
+        lblUsuario.setFont(new Font("Arial", Font.PLAIN, 12));
+        lblUsuario.setForeground(TemaColors.TEXTO_PRIMARIO);
+
         lblRol = new JLabel("Rol: " + usuarioActual.getRol());
+        lblRol.setFont(new Font("Arial", Font.PLAIN, 12));
+        lblRol.setForeground(TemaColors.TEXTO_PRIMARIO);
+
         lblEstablecimiento = new JLabel("Establecimiento: " +
             (usuarioActual.getEstablecimiento() != null ?
              usuarioActual.getEstablecimiento().getNombre() : "N/A"));
+        lblEstablecimiento.setFont(new Font("Arial", Font.PLAIN, 12));
+        lblEstablecimiento.setForeground(TemaColors.TEXTO_PRIMARIO);
 
-        JPanel panelInfo = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 0));
+        // Usar BoxLayout para mejor distribución del espacio
+        JPanel panelInfo = new JPanel();
+        panelInfo.setLayout(new BoxLayout(panelInfo, BoxLayout.X_AXIS));
+        panelInfo.setBackground(TemaColors.FONDO_PANEL);
+
         panelInfo.add(lblUsuario);
+        panelInfo.add(Box.createHorizontalStrut(20));
         panelInfo.add(new JSeparator(SwingConstants.VERTICAL));
+        panelInfo.add(Box.createHorizontalStrut(20));
         panelInfo.add(lblRol);
+        panelInfo.add(Box.createHorizontalStrut(20));
         panelInfo.add(new JSeparator(SwingConstants.VERTICAL));
+        panelInfo.add(Box.createHorizontalStrut(20));
         panelInfo.add(lblEstablecimiento);
+        panelInfo.add(Box.createHorizontalGlue()); // Espacio flexible
 
-        panel.add(panelInfo, BorderLayout.WEST);
+        panel.add(panelInfo, BorderLayout.CENTER);
+
+        // Indicador de modo (ONLINE/OFFLINE) más visible
+        JPanel panelModo = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        panelModo.setBackground(TemaColors.FONDO_PANEL);
+        JLabel lblModo;
+
+        if (GestorModo.getInstancia().isModoOffline()) {
+            lblModo = new JLabel("MODO OFFLINE - Datos no persistentes");
+            lblModo.setForeground(TemaColors.ESTADO_ERROR);
+            lblModo.setFont(new Font("Arial", Font.BOLD, 12));
+        } else {
+            lblModo = new JLabel("CONECTADO a MySQL");
+            lblModo.setForeground(TemaColors.ESTADO_EXITO);
+            lblModo.setFont(new Font("Arial", Font.BOLD, 12));
+        }
+
+        panelModo.add(lblModo);
+        panel.add(panelModo, BorderLayout.EAST);
 
         return panel;
     }

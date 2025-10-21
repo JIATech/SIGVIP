@@ -2,10 +2,14 @@ package com.sigvip.utilidades;
 
 import com.sigvip.modelo.*;
 import com.sigvip.modelo.enums.EstadoVisitante;
+import com.sigvip.modelo.enums.EstadoAutorizacion;
+import com.sigvip.modelo.enums.TipoRelacion;
+import com.sigvip.modelo.enums.Rol;
 import com.sigvip.persistencia.*;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -46,6 +50,12 @@ public class ServicioValidacionSeguridad {
         private List<String> errores;
         private List<String> advertencias;
 
+        // Campos para autorización inmediata
+        private boolean requiereAutorizacionInmediata;
+        private Visitante visitante;
+        private Interno interno;
+        private Usuario operador;
+
         public ResultadoValidacion() {
             this.errores = new ArrayList<>();
             this.advertencias = new ArrayList<>();
@@ -79,6 +89,34 @@ public class ServicioValidacionSeguridad {
 
         public boolean tieneAdvertencias() {
             return !advertencias.isEmpty();
+        }
+
+        // Métodos para autorización inmediata
+        public boolean requiereAutorizacionInmediata() {
+            return requiereAutorizacionInmediata;
+        }
+
+        public void setRequiereAutorizacionInmediata(boolean requiereAutorizacionInmediata) {
+            this.requiereAutorizacionInmediata = requiereAutorizacionInmediata;
+        }
+
+        public void setDatosAutorizacionInmediata(Visitante visitante, Interno interno, Usuario operador) {
+            this.visitante = visitante;
+            this.interno = interno;
+            this.operador = operador;
+            this.requiereAutorizacionInmediata = true;
+        }
+
+        public Visitante getVisitante() {
+            return visitante;
+        }
+
+        public Interno getInterno() {
+            return interno;
+        }
+
+        public Usuario getOperador() {
+            return operador;
         }
 
         public String getMensajeCompleto() {
@@ -122,8 +160,11 @@ public class ServicioValidacionSeguridad {
      * @param legajoInterno número de legajo del interno
      * @return resultado de la validación
      */
-    public ResultadoValidacion validarIngresoVisita(String dniVisitante, String legajoInterno) {
+    public ResultadoValidacion validarIngresoVisita(String dniVisitante, String legajoInterno, Usuario operador) {
         ResultadoValidacion resultado = new ResultadoValidacion();
+        System.out.println("DEBUG: Iniciando validarIngresoVisita - DNI: " + dniVisitante + ", Legajo: " + legajoInterno +
+                         ", Operador: " + (operador != null ? operador.getNombreCompleto() : "N/A") +
+                         ", Rol: " + (operador != null ? operador.getRol() : "N/A"));
 
         try {
             // PASO 1: Buscar y validar visitante
@@ -133,7 +174,7 @@ public class ServicioValidacionSeguridad {
                 return resultado;
             }
 
-            if (visitante.getEstado() != EstadoVisitante.HABILITADO) {
+            if (visitante.getEstado() != EstadoVisitante.ACTIVO) {
                 resultado.agregarError("El visitante no está habilitado. Estado actual: " +
                                       visitante.getEstado());
                 return resultado;
@@ -168,29 +209,51 @@ public class ServicioValidacionSeguridad {
             }
 
             // PASO 4: Verificar autorización vigente
+            System.out.println("DEBUG: Buscando autorización - Visitante ID: " + visitante.getIdVisitante() +
+                             ", Interno ID: " + interno.getIdInterno());
+
             Autorizacion autorizacion = autorizacionDAO.buscarPorVisitanteInterno(
                 visitante.getIdVisitante(),
                 interno.getIdInterno()
             );
 
+            System.out.println("DEBUG: Autorización encontrada: " + (autorizacion != null ? "SI" : "NO"));
+            if (autorizacion != null) {
+                System.out.println("DEBUG: Estado autorización: " + autorizacion.getEstado());
+                System.out.println("DEBUG: Vigente: " + autorizacion.estaVigente());
+            }
+
             if (autorizacion == null) {
-                resultado.agregarError("No existe autorización para que " +
-                                      visitante.getNombreCompleto() +
-                                      " visite a " + interno.getNombreCompleto());
-                return resultado;
-            }
+                // Verificar si el operador puede autorizar inmediatamente
+                if (operador != null && (operador.getRol() == Rol.ADMINISTRADOR || operador.getRol() == Rol.SUPERVISOR)) {
+                    System.out.println("🚨 AUTORIZACIÓN INMEDIATA POSIBLE - Operador con privilegios: " + operador.getRol());
 
-            if (!autorizacion.estaVigente()) {
-                resultado.agregarError("La autorización no está vigente. Estado: " +
-                                      autorizacion.getEstado());
-                if (autorizacion.estaVencida()) {
-                    resultado.agregarAdvertencia("La autorización venció el: " +
-                                                autorizacion.getFechaVencimiento());
+                    // Configurar datos para autorización inmediata (sin crearla aún)
+                    resultado.setDatosAutorizacionInmediata(visitante, interno, operador);
+                    resultado.agregarAdvertencia("ADVERTENCIA: El visitante no tiene autorización previa. Como " + operador.getRol() +
+                                               ", puedes autorizar esta visita inmediatamente.");
+                    // Continuar con las demás validaciones (horario, capacidad, etc.)
+                } else {
+                    resultado.agregarError("No existe autorización para que " +
+                                          visitante.getNombreCompleto() +
+                                          " visite a " + interno.getNombreCompleto() +
+                                          ". Solo ADMINISTRADOR y SUPERVISOR pueden autorizar inmediatamente.");
+                    return resultado;
                 }
-                return resultado;
+            } else {
+                // Si existe autorización, verificar su vigencia
+                if (!autorizacion.estaVigente()) {
+                    resultado.agregarError("La autorización no está vigente. Estado: " +
+                                          autorizacion.getEstado());
+                    if (autorizacion.estaVencida()) {
+                        resultado.agregarAdvertencia("La autorización venció el: " +
+                                                    autorizacion.getFechaVencimiento());
+                    }
+                    return resultado;
+                }
             }
 
-            // PASO 5: Validar horario del establecimiento
+            // PASO 5: Validar horario del establecimiento (con advertencia, no bloqueo)
             if (interno.getEstablecimiento() != null) {
                 Establecimiento establecimiento = establecimientoDAO.buscarPorId(
                     interno.getEstablecimiento().getIdEstablecimiento()
@@ -199,10 +262,17 @@ public class ServicioValidacionSeguridad {
                 if (establecimiento != null) {
                     Date ahora = new Date();
                     if (!establecimiento.horarioPermiteVisita(ahora)) {
-                        resultado.agregarError("Horario de visita no permitido. " +
-                                              "Horario habilitado: " +
-                                              establecimiento.getHorarioFormateado());
-                        return resultado;
+                        resultado.agregarAdvertencia("ADVERTENCIA: Visita fuera de horario habitual. " +
+                                                   "Horario habilitado: " +
+                                                   establecimiento.getHorarioFormateado() +
+                                                   " - Se permite el ingreso por excepción.");
+                        System.out.println("ADVERTENCIA: Visitante registrado fuera de horario - " +
+                                         "Visitante: " + visitante.getNombreCompleto() +
+                                         ", Hora actual: " + new java.text.SimpleDateFormat("HH:mm").format(ahora) +
+                                         ", Horario permitido: " + establecimiento.getHorarioFormateado());
+                    } else {
+                        resultado.agregarAdvertencia("✓ Visita dentro del horario habilitado: " +
+                                                   establecimiento.getHorarioFormateado());
                     }
                 }
             }
@@ -235,10 +305,16 @@ public class ServicioValidacionSeguridad {
             }
 
             // Todas las validaciones pasaron
-            resultado.agregarAdvertencia("Autorización tipo: " + autorizacion.getTipoRelacion());
+            if (autorizacion != null) {
+                resultado.agregarAdvertencia("Autorización tipo: " + autorizacion.getTipoRelacion());
+            } else if (resultado.requiereAutorizacionInmediata()) {
+                resultado.agregarAdvertencia("Autorización: Inmediata (pendiente de confirmación)");
+            }
             resultado.agregarAdvertencia("Interno ubicado en: " + interno.getUbicacionCompleta());
 
         } catch (SQLException e) {
+            System.out.println("DEBUG: SQLException en validarIngresoVisita: " + e.getMessage());
+            e.printStackTrace();
             resultado.agregarError("Error al validar ingreso: " + e.getMessage());
         }
 
@@ -357,5 +433,58 @@ public class ServicioValidacionSeguridad {
         }
 
         return resultado;
+    }
+
+    /**
+     * Crea una autorización inmediata para usuarios autorizados.
+     * Vence al día siguiente a las 23:59.
+     *
+     * @param visitante visitante a autorizar
+     * @param interno interno a visitar
+     * @param autorizadoPor usuario que autoriza
+     * @return autorización creada o null si hay error
+     */
+    public Autorizacion crearAutorizacionInmediata(Visitante visitante, Interno interno, Usuario autorizadoPor) {
+        try {
+            // Crear fecha de vencimiento: mañana a las 23:59
+            Calendar calVencimiento = Calendar.getInstance();
+            calVencimiento.add(Calendar.DAY_OF_MONTH, 1);
+            calVencimiento.set(Calendar.HOUR_OF_DAY, 23);
+            calVencimiento.set(Calendar.MINUTE, 59);
+            calVencimiento.set(Calendar.SECOND, 0);
+            calVencimiento.set(Calendar.MILLISECOND, 0);
+
+            // Crear autorización con tipo de relación por defecto
+            Autorizacion autorizacion = new Autorizacion(
+                visitante,
+                interno,
+                TipoRelacion.OTRO // Para autorizaciones inmediatas espontáneas
+            );
+
+            // Establecer datos adicionales
+            autorizacion.setDescripcionRelacion("Autorización inmediata - Visitante espontáneo - " +
+                new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm").format(new Date()));
+            autorizacion.setFechaAutorizacion(new Date()); // Fecha de autorización = ahora
+            autorizacion.setFechaVencimiento(calVencimiento.getTime()); // Vence mañana
+            autorizacion.setAutorizadoPor(autorizadoPor);
+
+            // Insertar autorización en la base de datos
+            Long idAutorizacion = autorizacionDAO.insertar(autorizacion);
+
+            if (idAutorizacion != null) {
+                autorizacion.setIdAutorizacion(idAutorizacion);
+                System.out.println("📋 Autorización inmediata creada - Tipo: " + autorizacion.getTipoRelacion() +
+                                 ", Vence: " + new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm").format(autorizacion.getFechaVencimiento()));
+                return autorizacion;
+            } else {
+                System.err.println("✗ Error al insertar autorización inmediata");
+                return null;
+            }
+
+        } catch (SQLException e) {
+            System.err.println("✗ Error al crear autorización inmediata: " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
     }
 }

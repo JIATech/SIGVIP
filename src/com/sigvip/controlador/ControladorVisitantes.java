@@ -89,7 +89,7 @@ public class ControladorVisitantes {
             visitante.setTelefono(telefono != null ? telefono.trim() : null);
             visitante.setEmail(email != null ? ValidadorDatos.normalizarEmail(email) : null);
             visitante.setDomicilio(domicilio != null ? domicilio.trim() : null);
-            visitante.setEstado(EstadoVisitante.HABILITADO);
+            visitante.setEstado(EstadoVisitante.ACTIVO);
             visitante.setFechaRegistro(new Date());
 
             // Persistir en la base de datos
@@ -233,7 +233,7 @@ public class ControladorVisitantes {
      * @return true si se inhabilitó correctamente
      */
     public boolean inhabilitarVisitante(String dni) {
-        return cambiarEstado(dni, EstadoVisitante.INHABILITADO);
+        return cambiarEstado(dni, EstadoVisitante.INACTIVO);
     }
 
     /**
@@ -243,7 +243,7 @@ public class ControladorVisitantes {
      * @return true si se habilitó correctamente
      */
     public boolean habilitarVisitante(String dni) {
-        return cambiarEstado(dni, EstadoVisitante.HABILITADO);
+        return cambiarEstado(dni, EstadoVisitante.ACTIVO);
     }
 
     /**
@@ -281,7 +281,7 @@ public class ControladorVisitantes {
      * @return lista de visitantes habilitados
      */
     public List<Visitante> obtenerHabilitados() {
-        return obtenerPorEstado(EstadoVisitante.HABILITADO);
+        return obtenerPorEstado(EstadoVisitante.ACTIVO);
     }
 
     /**

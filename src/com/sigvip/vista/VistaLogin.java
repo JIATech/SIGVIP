@@ -2,6 +2,7 @@ package com.sigvip.vista;
 
 import com.sigvip.modelo.Usuario;
 import com.sigvip.persistencia.UsuarioDAO;
+import com.sigvip.utilidades.TemaColors;
 
 import javax.swing.*;
 import java.awt.*;
@@ -84,7 +85,7 @@ public class VistaLogin extends JFrame {
         // Título
         JLabel lblTitulo = new JLabel("SIGVIP", SwingConstants.CENTER);
         lblTitulo.setFont(new Font("Arial", Font.BOLD, 24));
-        lblTitulo.setForeground(new Color(41, 128, 185)); // Azul
+        lblTitulo.setForeground(TemaColors.PRIMARIO);
 
         // Subtítulo
         JLabel lblSubtitulo = new JLabel(
@@ -92,7 +93,7 @@ public class VistaLogin extends JFrame {
             SwingConstants.CENTER
         );
         lblSubtitulo.setFont(new Font("Arial", Font.PLAIN, 12));
-        lblSubtitulo.setForeground(Color.DARK_GRAY);
+        lblSubtitulo.setForeground(TemaColors.TEXTO_SECUNDARIO);
 
         // Panel de títulos
         JPanel panelTitulos = new JPanel(new GridLayout(2, 1, 0, 5));
@@ -166,13 +167,12 @@ public class VistaLogin extends JFrame {
 
         btnCancelar = new JButton("Cancelar");
         btnCancelar.setPreferredSize(new Dimension(100, 30));
+        TemaColors.aplicarEstiloBotonCancelar(btnCancelar);
         btnCancelar.addActionListener(e -> System.exit(0));
 
         btnIngresar = new JButton("Ingresar");
         btnIngresar.setPreferredSize(new Dimension(100, 30));
-        btnIngresar.setBackground(new Color(46, 204, 113)); // Verde
-        btnIngresar.setForeground(Color.WHITE);
-        btnIngresar.setFocusPainted(false);
+        TemaColors.aplicarEstiloBotonAccion(btnIngresar);
         btnIngresar.addActionListener(e -> intentarLogin());
 
         panel.add(btnCancelar);

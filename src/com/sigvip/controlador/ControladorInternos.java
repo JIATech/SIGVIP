@@ -142,7 +142,12 @@ public class ControladorInternos {
         interno.setFechaIngreso(fechaIngreso);
         interno.setSituacionProcesal(situacionProcesal);
         interno.setPabellonActual(pabellonActual != null ? pabellonActual.trim() : null);
-        interno.setPisoActual(pisoActual != null ? pisoActual.trim() : null);
+        try {
+            interno.setPisoActual(pisoActual != null && !pisoActual.trim().isEmpty() ?
+                                Integer.parseInt(pisoActual.trim()) : 0);
+        } catch (NumberFormatException e) {
+            interno.setPisoActual(0);
+        }
         interno.setEstado(EstadoInterno.ACTIVO);
         interno.setObservaciones(observaciones != null ? observaciones.trim() : null);
 
@@ -261,7 +266,12 @@ public class ControladorInternos {
         }
 
         interno.setPabellonActual(pabellon != null ? pabellon.trim() : null);
-        interno.setPisoActual(piso != null ? piso.trim() : null);
+        try {
+            interno.setPisoActual(piso != null && !piso.trim().isEmpty() ?
+                                Integer.parseInt(piso.trim()) : 0);
+        } catch (NumberFormatException e) {
+            interno.setPisoActual(0);
+        }
 
         internoDAO.actualizar(interno);
     }

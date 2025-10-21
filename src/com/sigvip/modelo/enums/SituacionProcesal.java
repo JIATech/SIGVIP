@@ -6,8 +6,7 @@ package com.sigvip.modelo.enums;
  */
 public enum SituacionProcesal {
     PROCESADO("Procesado - Con causa judicial en trámite"),
-    CONDENADO("Condenado - Con sentencia firme"),
-    PREVENTIVO("Preventivo - Prisión preventiva");
+    CONDENADO("Condenado - Con sentencia firme");
 
     private final String descripcion;
 

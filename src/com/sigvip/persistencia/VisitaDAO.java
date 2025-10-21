@@ -11,6 +11,9 @@ import java.util.List;
  * DAO para operaciones CRUD de la entidad Visita.
  * Implementa el acceso a la tabla 'visitas' de la base de datos.
  *
+ * <p>Modo Offline: Si no hay conexión a MySQL, usa RepositorioMemoria (datos en RAM).
+ * Modo Online: Funcionamiento normal con JDBC y MySQL.
+ *
  * Especificación: PDF Sección 11.2.3 - Capa de Persistencia
  * Crítico para: RF003 (Control de Ingreso), RF004 (Control de Egreso)
  */
@@ -30,6 +33,12 @@ public class VisitaDAO {
      * @throws SQLException si ocurre un error
      */
     public Long insertar(Visita visita) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria (CRÍTICO RF003/RF004)
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().insertarVisita(visita);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "INSERT INTO visitas (id_visitante, id_interno, fecha_visita, " +
                     "hora_ingreso, hora_egreso, estado_visita, id_operador_ingreso, " +
                     "id_operador_egreso, observaciones) " +
@@ -80,6 +89,12 @@ public class VisitaDAO {
      * @throws SQLException si ocurre un error
      */
     public Visita buscarPorId(Long id) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().buscarVisitaPorId(id);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT * FROM visitas WHERE id_visita = ?";
 
         try (Connection conn = conexionBD.getConexion();
@@ -104,6 +119,12 @@ public class VisitaDAO {
      * @throws SQLException si ocurre un error
      */
     public boolean actualizar(Visita visita) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria (CRÍTICO RF003/RF004)
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().actualizarVisita(visita);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "UPDATE visitas SET id_visitante = ?, id_interno = ?, fecha_visita = ?, " +
                     "hora_ingreso = ?, hora_egreso = ?, estado_visita = ?, " +
                     "id_operador_ingreso = ?, id_operador_egreso = ?, observaciones = ? " +
@@ -264,6 +285,12 @@ public class VisitaDAO {
      * @throws SQLException si ocurre un error
      */
     public List<Visita> obtenerEnCurso() throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().listarVisitasEnCurso();
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT * FROM visitas WHERE estado_visita = ? " +
                     "ORDER BY hora_ingreso ASC";
         List<Visita> visitas = new ArrayList<>();
@@ -342,12 +369,84 @@ public class VisitaDAO {
     }
 
     /**
+     * Obtiene visitas de un visitante en un rango de fechas.
+     * Combinación de búsqueda por visitante y rango de fechas para reportes.
+     *
+     * @param idVisitante ID del visitante
+     * @param fechaInicio fecha de inicio (inclusive)
+     * @param fechaFin fecha de fin (inclusive)
+     * @return lista de visitas del visitante en el rango
+     * @throws SQLException si ocurre un error
+     */
+    public List<Visita> buscarPorVisitanteRangoFechas(Long idVisitante,
+                                                     java.util.Date fechaInicio,
+                                                     java.util.Date fechaFin) throws SQLException {
+        String sql = "SELECT * FROM visitas WHERE id_visitante = ? AND fecha_visita BETWEEN ? AND ? " +
+                    "ORDER BY fecha_visita DESC, hora_ingreso DESC";
+        List<Visita> visitas = new ArrayList<>();
+
+        try (Connection conn = conexionBD.getConexion();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setLong(1, idVisitante);
+            stmt.setDate(2, new java.sql.Date(fechaInicio.getTime()));
+            stmt.setDate(3, new java.sql.Date(fechaFin.getTime()));
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    visitas.add(mapearResultSet(rs));
+                }
+            }
+        }
+        return visitas;
+    }
+
+    /**
+     * Obtiene visitas de un interno en un rango de fechas.
+     * Combinación de búsqueda por interno y rango de fechas para reportes.
+     *
+     * @param idInterno ID del interno
+     * @param fechaInicio fecha de inicio (inclusive)
+     * @param fechaFin fecha de fin (inclusive)
+     * @return lista de visitas del interno en el rango
+     * @throws SQLException si ocurre un error
+     */
+    public List<Visita> buscarPorInternoRangoFechas(Long idInterno,
+                                                   java.util.Date fechaInicio,
+                                                   java.util.Date fechaFin) throws SQLException {
+        String sql = "SELECT * FROM visitas WHERE id_interno = ? AND fecha_visita BETWEEN ? AND ? " +
+                    "ORDER BY fecha_visita DESC, hora_ingreso DESC";
+        List<Visita> visitas = new ArrayList<>();
+
+        try (Connection conn = conexionBD.getConexion();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setLong(1, idInterno);
+            stmt.setDate(2, new java.sql.Date(fechaInicio.getTime()));
+            stmt.setDate(3, new java.sql.Date(fechaFin.getTime()));
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    visitas.add(mapearResultSet(rs));
+                }
+            }
+        }
+        return visitas;
+    }
+
+    /**
      * Cuenta visitas en curso para verificar capacidad.
      *
      * @return número de visitas actualmente en curso
      * @throws SQLException si ocurre un error
      */
     public int contarVisitasEnCurso() throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().contarVisitasEnCurso();
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT COUNT(*) FROM visitas WHERE estado_visita = ?";
 
         try (Connection conn = conexionBD.getConexion();

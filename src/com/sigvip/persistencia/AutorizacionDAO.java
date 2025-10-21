@@ -15,6 +15,9 @@ import java.util.List;
  * DAO para operaciones CRUD de la entidad Autorizacion.
  * Implementa el acceso a la tabla 'autorizaciones' de la base de datos.
  *
+ * <p>Modo Offline: Si no hay conexión a MySQL, usa RepositorioMemoria (datos en RAM).
+ * Modo Online: Funcionamiento normal con JDBC y MySQL.
+ *
  * Especificación: PDF Sección 11.2.3 - Capa de Persistencia
  * Crítico para: RF003 (Control de Ingreso) - validación de autorización
  */
@@ -34,6 +37,12 @@ public class AutorizacionDAO {
      * @throws SQLException si ocurre un error
      */
     public Long insertar(Autorizacion autorizacion) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().insertarAutorizacion(autorizacion);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "INSERT INTO autorizaciones (id_visitante, id_interno, tipo_relacion, " +
                     "descripcion_relacion, fecha_autorizacion, fecha_vencimiento, estado, " +
                     "id_autorizado_por, observaciones) " +
@@ -83,6 +92,12 @@ public class AutorizacionDAO {
      * @throws SQLException si ocurre un error
      */
     public Autorizacion buscarPorId(Long id) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().buscarAutorizacionPorId(id);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT * FROM autorizaciones WHERE id_autorizacion = ?";
 
         try (Connection conn = conexionBD.getConexion();
@@ -111,6 +126,12 @@ public class AutorizacionDAO {
      */
     public Autorizacion buscarPorVisitanteInterno(Long idVisitante, Long idInterno)
             throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria (CRÍTICO RF003)
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().buscarAutorizacionVigente(idVisitante, idInterno);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT * FROM autorizaciones WHERE id_visitante = ? AND id_interno = ?";
 
         try (Connection conn = conexionBD.getConexion();
@@ -191,6 +212,12 @@ public class AutorizacionDAO {
      * @throws SQLException si ocurre un error
      */
     public List<Autorizacion> obtenerTodas() throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().listarAutorizaciones();
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT * FROM autorizaciones ORDER BY fecha_autorizacion DESC";
         List<Autorizacion> autorizaciones = new ArrayList<>();
 
@@ -203,6 +230,30 @@ public class AutorizacionDAO {
             }
         }
 
+        return autorizaciones;
+    }
+
+    /**
+     * Obtiene todas las autorizaciones vigentes.
+     * Método para reportes y gestión.
+     *
+     * @return lista de autorizaciones vigentes
+     * @throws SQLException si ocurre un error
+     */
+    public List<Autorizacion> obtenerVigentes() throws SQLException {
+        String sql = "SELECT * FROM autorizaciones WHERE estado = 'VIGENTE' " +
+                    "AND (fecha_vencimiento IS NULL OR fecha_vencimiento >= CURDATE()) " +
+                    "ORDER BY fecha_autorizacion DESC";
+        List<Autorizacion> autorizaciones = new ArrayList<>();
+
+        try (Connection conn = conexionBD.getConexion();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                autorizaciones.add(mapearResultSet(rs));
+            }
+        }
         return autorizaciones;
     }
 
@@ -272,6 +323,15 @@ public class AutorizacionDAO {
      * @throws SQLException si ocurre un error
      */
     public List<Autorizacion> buscarPorEstado(EstadoAutorizacion estado) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().listarAutorizaciones()
+                    .stream()
+                    .filter(a -> a.getEstado() == estado)
+                    .collect(java.util.stream.Collectors.toList());
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT * FROM autorizaciones WHERE estado = ? " +
                     "ORDER BY fecha_autorizacion DESC";
         List<Autorizacion> autorizaciones = new ArrayList<>();

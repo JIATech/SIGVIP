@@ -1,6 +1,11 @@
 package com.sigvip;
 
 import com.sigvip.persistencia.ConexionBD;
+import com.sigvip.persistencia.GestorModo;
+import com.sigvip.persistencia.RepositorioMemoria;
+import com.sigvip.utilidades.TemaColors;
+import com.sigvip.vista.DialogoConexionBD;
+import com.sigvip.vista.DialogoConfigManualBD;
 import com.sigvip.vista.VistaLogin;
 
 import javax.swing.*;
@@ -27,20 +32,33 @@ public class Main {
      * @param args argumentos de línea de comandos (no utilizados)
      */
     public static void main(String[] args) {
+        // Configurar Look and Feel nativo para mejor apariencia
+        try {
+            String systemLF = UIManager.getSystemLookAndFeelClassName();
+            UIManager.setLookAndFeel(systemLF);
+            System.out.println("✓ Look and Feel configurado: " + UIManager.getLookAndFeel().getName());
+        } catch (Exception e) {
+            System.err.println("✗ Error configurando Look and Feel: " + e.getMessage());
+            // Continuar con el Look and Feel por defecto
+        }
+
+        // Configurar propiedades UI para consistencia
+        System.setProperty("swing.boldMetal", "false");
+
         // Imprimir información de inicio
-        System.out.println("═══════════════════════════════════════════════════");
+        System.out.println("=================================================");
         System.out.println("  SIGVIP - Sistema de Gestión de Visitas");
         System.out.println("  Universidad Siglo 21 - INF275");
-        System.out.println("  Versión 1.0");
-        System.out.println("═══════════════════════════════════════════════════\n");
+        System.out.println("  Version 1.0");
+        System.out.println("=================================================\n");
 
         // Verificar conexión a base de datos
         System.out.println("Verificando conexión a base de datos...");
         ConexionBD conexionBD = ConexionBD.getInstancia();
 
         if (!conexionBD.probarConexion()) {
-            mostrarErrorConexion();
-            return;
+            // Mostrar diálogo con opciones si falla la conexión
+            manejarFallaConexion();
         }
 
         System.out.println();
@@ -96,36 +114,78 @@ public class Main {
      */
     private static void registrarHookCierre() {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            System.out.println("\n═══════════════════════════════════════════════════");
+            System.out.println("\n=================================================");
             System.out.println("  Cerrando SIGVIP...");
             ConexionBD.getInstancia().cerrarConexion();
-            System.out.println("  Aplicación finalizada correctamente");
-            System.out.println("═══════════════════════════════════════════════════");
+            System.out.println("  Aplicacion finalizada correctamente");
+            System.out.println("=================================================");
         }));
     }
 
     /**
-     * Muestra un diálogo de error cuando falla la conexión a base de datos.
-     * Detiene la ejecución de la aplicación.
+     * Maneja la falla de conexión a base de datos.
+     * Muestra diálogo con opciones: Reintentar, Configurar o Modo Offline.
      */
-    private static void mostrarErrorConexion() {
-        String mensaje = "No se pudo conectar a la base de datos.\n\n" +
-                        "Verifique:\n" +
-                        "1. MySQL está instalado y ejecutándose\n" +
-                        "2. La base de datos 'sigvip_db' existe\n" +
-                        "3. Las credenciales en resources/config.properties son correctas\n" +
-                        "4. MySQL Connector/J está en lib/ y agregado al classpath\n\n" +
-                        "Consulte README.md para instrucciones de configuración.";
+    private static void manejarFallaConexion() {
+        boolean conectado = false;
+        int intentos = 0;
+        final int MAX_INTENTOS = 3;
 
-        JOptionPane.showMessageDialog(
-            null,
-            mensaje,
-            "Error de Conexión - SIGVIP",
-            JOptionPane.ERROR_MESSAGE
-        );
+        while (!conectado && intentos < MAX_INTENTOS) {
+            int opcion = DialogoConexionBD.mostrar();
 
-        System.err.println("\n✗ Aplicación terminada debido a error de conexión");
-        System.exit(1);
+            switch (opcion) {
+                case DialogoConexionBD.REINTENTAR:
+                    System.out.println("\n🔄 Reintentando conexión a MySQL...");
+                    ConexionBD conexionBD = ConexionBD.getInstancia();
+                    conectado = conexionBD.probarConexion();
+
+                    if (!conectado) {
+                        intentos++;
+                        System.out.println("✗ Reintento fallido (" + intentos + "/" + MAX_INTENTOS + ")");
+                    } else {
+                        System.out.println("✓ Conexión exitosa");
+                        GestorModo.getInstancia().activarModoOnline();
+                    }
+                    break;
+
+                case DialogoConexionBD.CONFIGURAR:
+                    System.out.println("\n⚙ Abriendo configuración manual...");
+                    boolean configuradoOK = DialogoConfigManualBD.mostrar();
+
+                    if (configuradoOK) {
+                        // Reiniciar conexión con nueva configuración
+                        ConexionBD nuevaConexion = ConexionBD.getInstancia();
+                        conectado = nuevaConexion.probarConexion();
+
+                        if (conectado) {
+                            System.out.println("✓ Conexión exitosa con nueva configuración");
+                            GestorModo.getInstancia().activarModoOnline();
+                        } else {
+                            System.out.println("✗ Configuración manual falló");
+                            intentos++;
+                        }
+                    }
+                    break;
+
+                case DialogoConexionBD.MODO_OFFLINE:
+                    System.out.println("\n🔴 Activando MODO OFFLINE...");
+                    GestorModo.getInstancia().activarModoOffline();
+                    RepositorioMemoria.getInstancia().inicializarDatosPrueba();
+                    return; // Salir del bucle
+
+                case DialogoConexionBD.CANCELAR:
+                default:
+                    System.out.println("\n[x] Usuario cancelo. Cerrando aplicacion...");
+                    System.exit(0);
+                    return;
+            }
+        }
+
+        if (!conectado && !GestorModo.getInstancia().isModoOffline()) {
+            System.err.println("\n✗ Número máximo de intentos alcanzado");
+            System.exit(1);
+        }
     }
 
     /**

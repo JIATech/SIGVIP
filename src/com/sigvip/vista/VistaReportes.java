@@ -4,6 +4,10 @@ import com.sigvip.controlador.ControladorReportes;
 import com.sigvip.modelo.ReporteGenerado;
 import com.sigvip.modelo.Usuario;
 import com.sigvip.modelo.enums.TipoReporte;
+import com.sigvip.utilidades.TemaColors;
+import com.sigvip.vista.componentes.JDatePicker;
+
+import java.util.ArrayList;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -141,10 +145,7 @@ public class VistaReportes extends JFrame {
         // Botón generar
         gbc.gridy = 2;
         btnGenerar = new JButton("Generar Reporte");
-        btnGenerar.setBackground(new Color(46, 204, 113));
-        btnGenerar.setForeground(Color.WHITE);
-        btnGenerar.setFocusPainted(false);
-        btnGenerar.setFont(new Font("Arial", Font.BOLD, 14));
+        TemaColors.aplicarEstiloBoton(btnGenerar, TemaColors.ACENTO_REPORTES);
         btnGenerar.addActionListener(e -> generarReporte());
         panelConfig.add(btnGenerar, gbc);
 
@@ -196,7 +197,7 @@ public class VistaReportes extends JFrame {
 
         JLabel lblInfo = new JLabel("El reporte se guardará automáticamente en la base de datos");
         lblInfo.setFont(new Font("Arial", Font.ITALIC, 11));
-        lblInfo.setForeground(Color.GRAY);
+        lblInfo.setForeground(TemaColors.TEXTO_SECUNDARIO);
         panelBotones.add(lblInfo);
 
         panelVista.add(panelBotones, BorderLayout.SOUTH);
@@ -253,17 +254,17 @@ public class VistaReportes extends JFrame {
         gbc.gridx = 0; gbc.gridy = 0;
         panel.add(new JLabel("Fecha Inicio:"), gbc);
         gbc.gridx = 1;
-        JTextField txtFechaInicio = new JTextField(formatoFecha.format(fechasDefecto[0]), 12);
-        txtFechaInicio.setName("txtFechaInicio");
-        panel.add(txtFechaInicio, gbc);
+        JDatePicker datePickerInicio = new JDatePicker(fechasDefecto[0]);
+        datePickerInicio.setName("datePickerInicio");
+        panel.add(datePickerInicio, gbc);
 
         // Fecha fin
         gbc.gridx = 0; gbc.gridy = 1;
         panel.add(new JLabel("Fecha Fin:"), gbc);
         gbc.gridx = 1;
-        JTextField txtFechaFin = new JTextField(formatoFecha.format(fechasDefecto[1]), 12);
-        txtFechaFin.setName("txtFechaFin");
-        panel.add(txtFechaFin, gbc);
+        JDatePicker datePickerFin = new JDatePicker(fechasDefecto[1]);
+        datePickerFin.setName("datePickerFin");
+        panel.add(datePickerFin, gbc);
 
         // Estado filtro
         gbc.gridx = 0; gbc.gridy = 2;
@@ -443,15 +444,47 @@ public class VistaReportes extends JFrame {
     }
 
     /**
+     * Métodos auxiliares para búsqueda de componentes.
+     */
+    private JDatePicker findDatePicker(Container container, String name) {
+        for (Component comp : container.getComponents()) {
+            if (comp instanceof JDatePicker && name.equals(comp.getName())) {
+                return (JDatePicker) comp;
+            } else if (comp instanceof Container) {
+                JDatePicker found = findDatePicker((Container) comp, name);
+                if (found != null) return found;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Métodos de generación específicos.
      */
     private ReporteGenerado generarReporteVisitasPorFecha() throws Exception {
+        // Intentar encontrar JDatePickers primero
+        JDatePicker datePickerInicio = findDatePicker(panelFiltros, "datePickerInicio");
+        JDatePicker datePickerFin = findDatePicker(panelFiltros, "datePickerFin");
+
+        // Si no se encuentran, usar los JTextField tradicionales (compatibilidad)
         JTextField txtFechaInicio = findTextField(panelFiltros, "txtFechaInicio");
         JTextField txtFechaFin = findTextField(panelFiltros, "txtFechaFin");
+
         JComboBox<String> cbEstado = findComboBox(panelFiltros, "cbEstado");
 
-        Date fechaInicio = formatoFecha.parse(txtFechaInicio.getText());
-        Date fechaFin = formatoFecha.parse(txtFechaFin.getText());
+        Date fechaInicio;
+        Date fechaFin;
+
+        if (datePickerInicio != null && datePickerFin != null) {
+            // Usar los nuevos selectores de fecha
+            fechaInicio = datePickerInicio.getFecha();
+            fechaFin = datePickerFin.getFecha();
+        } else {
+            // Usar los campos de texto tradicionales
+            fechaInicio = formatoFecha.parse(txtFechaInicio.getText());
+            fechaFin = formatoFecha.parse(txtFechaFin.getText());
+        }
+
         String estado = (String) cbEstado.getSelectedItem();
 
         // Validar parámetros
@@ -587,16 +620,14 @@ public class VistaReportes extends JFrame {
             job.setJobName("Reporte SIGVIP");
 
             if (job.printDialog()) {
-                boolean success = editorReporte.print(null);
-                if (success) {
-                    JOptionPane.showMessageDialog(this,
-                        "Reporte enviado a impresión",
-                        "Impresión", JOptionPane.INFORMATION_MESSAGE);
-                } else {
-                    JOptionPane.showMessageDialog(this,
-                        "Error al imprimir el reporte",
-                        "Error de Impresión", JOptionPane.ERROR_MESSAGE);
-                }
+                editorReporte.print(null);
+                JOptionPane.showMessageDialog(this,
+                    "Reporte enviado a impresión",
+                    "Impresión", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this,
+                    "Impresión cancelada",
+                    "Impresión", JOptionPane.INFORMATION_MESSAGE);
             }
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,

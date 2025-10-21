@@ -6,11 +6,16 @@ import com.sigvip.modelo.enums.Rol;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * DAO para operaciones CRUD de la entidad Usuario.
  * Implementa el acceso a la tabla 'usuarios' de la base de datos.
+ *
+ * <p>Modo Offline: Si no hay conexión a MySQL, usa RepositorioMemoria (datos en RAM).
+ * Modo Online: Funcionamiento normal con JDBC y MySQL.
  *
  * Especificación: PDF Sección 11.2.3 - Capa de Persistencia
  * Crítico para: RF001 (Autenticación), control de acceso por roles
@@ -32,6 +37,12 @@ public class UsuarioDAO {
      * @throws SQLException si ocurre un error
      */
     public Long insertar(Usuario usuario) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().insertarUsuario(usuario);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "INSERT INTO usuarios (nombre_usuario, contrasena, nombre_completo, " +
                     "rol, id_establecimiento, activo, fecha_creacion, ultimo_acceso) " +
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
@@ -77,6 +88,12 @@ public class UsuarioDAO {
      * @throws SQLException si ocurre un error
      */
     public Usuario buscarPorId(Long id) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().buscarUsuarioPorId(id);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT * FROM usuarios WHERE id_usuario = ?";
 
         try (Connection conn = conexionBD.getConexion();
@@ -103,6 +120,12 @@ public class UsuarioDAO {
      * @throws SQLException si ocurre un error
      */
     public Usuario buscarPorNombreUsuario(String nombreUsuario) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria (CRÍTICO PARA LOGIN)
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().buscarUsuarioPorNombre(nombreUsuario);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT * FROM usuarios WHERE nombre_usuario = ?";
 
         try (Connection conn = conexionBD.getConexion();
@@ -127,6 +150,12 @@ public class UsuarioDAO {
      * @throws SQLException si ocurre un error
      */
     public boolean actualizar(Usuario usuario) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().actualizarUsuario(usuario);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "UPDATE usuarios SET nombre_usuario = ?, contrasena = ?, " +
                     "nombre_completo = ?, rol = ?, id_establecimiento = ?, activo = ?, " +
                     "fecha_creacion = ?, ultimo_acceso = ? WHERE id_usuario = ?";
@@ -161,6 +190,17 @@ public class UsuarioDAO {
      * @throws SQLException si ocurre un error
      */
     public boolean actualizarUltimoAcceso(Long idUsuario) throws SQLException {
+        // MODO OFFLINE: Actualizar en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            Usuario u = RepositorioMemoria.getInstancia().buscarUsuarioPorId(idUsuario);
+            if (u != null) {
+                u.setUltimoAcceso(new Date());
+                return RepositorioMemoria.getInstancia().actualizarUsuario(u);
+            }
+            return false;
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "UPDATE usuarios SET ultimo_acceso = NOW() WHERE id_usuario = ?";
 
         try (Connection conn = conexionBD.getConexion();
@@ -181,6 +221,12 @@ public class UsuarioDAO {
      * @throws SQLException si ocurre un error
      */
     public boolean eliminar(Long id) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().eliminarUsuario(id);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "DELETE FROM usuarios WHERE id_usuario = ?";
 
         try (Connection conn = conexionBD.getConexion();
@@ -199,6 +245,12 @@ public class UsuarioDAO {
      * @throws SQLException si ocurre un error
      */
     public List<Usuario> obtenerTodos() throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().listarUsuarios();
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT * FROM usuarios ORDER BY nombre_completo";
         List<Usuario> usuarios = new ArrayList<>();
 
@@ -221,6 +273,14 @@ public class UsuarioDAO {
      * @throws SQLException si ocurre un error
      */
     public List<Usuario> obtenerActivos() throws SQLException {
+        // MODO OFFLINE: Filtrar en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().listarUsuarios().stream()
+                    .filter(Usuario::isActivo)
+                    .collect(Collectors.toList());
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT * FROM usuarios WHERE activo = true ORDER BY nombre_completo";
         List<Usuario> usuarios = new ArrayList<>();
 
@@ -244,6 +304,14 @@ public class UsuarioDAO {
      * @throws SQLException si ocurre un error
      */
     public List<Usuario> buscarPorRol(Rol rol) throws SQLException {
+        // MODO OFFLINE: Filtrar en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().listarUsuarios().stream()
+                    .filter(u -> u.getRol() == rol)
+                    .collect(Collectors.toList());
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT * FROM usuarios WHERE rol = ? ORDER BY nombre_completo";
         List<Usuario> usuarios = new ArrayList<>();
 
@@ -270,6 +338,15 @@ public class UsuarioDAO {
      * @throws SQLException si ocurre un error
      */
     public List<Usuario> buscarPorEstablecimiento(Long idEstablecimiento) throws SQLException {
+        // MODO OFFLINE: Filtrar en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().listarUsuarios().stream()
+                    .filter(u -> u.getEstablecimiento() != null &&
+                                 u.getEstablecimiento().getIdEstablecimiento().equals(idEstablecimiento))
+                    .collect(Collectors.toList());
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT * FROM usuarios WHERE id_establecimiento = ? " +
                     "ORDER BY nombre_completo";
         List<Usuario> usuarios = new ArrayList<>();
@@ -298,6 +375,12 @@ public class UsuarioDAO {
      * @throws SQLException si ocurre un error
      */
     public boolean existeNombreUsuario(String nombreUsuario) throws SQLException {
+        // MODO OFFLINE: Buscar en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().buscarUsuarioPorNombre(nombreUsuario) != null;
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT COUNT(*) FROM usuarios WHERE nombre_usuario = ?";
 
         try (Connection conn = conexionBD.getConexion();
@@ -323,6 +406,14 @@ public class UsuarioDAO {
      * @throws SQLException si ocurre un error
      */
     public int contarPorRol(Rol rol) throws SQLException {
+        // MODO OFFLINE: Contar en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return (int) RepositorioMemoria.getInstancia().listarUsuarios().stream()
+                    .filter(u -> u.getRol() == rol && u.isActivo())
+                    .count();
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT COUNT(*) FROM usuarios WHERE rol = ? AND activo = true";
 
         try (Connection conn = conexionBD.getConexion();

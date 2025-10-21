@@ -25,6 +25,7 @@ public class Visitante {
     private String nombre;
     private String domicilio;
     private String telefono;
+    private String email;
     private Date fechaNacimiento;
     private byte[] foto;
     private EstadoVisitante estado;
@@ -194,6 +195,14 @@ public class Visitante {
 
     public void setTelefono(String telefono) {
         this.telefono = telefono;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public Date getFechaNacimiento() {

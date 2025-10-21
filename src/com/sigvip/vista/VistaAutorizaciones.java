@@ -7,6 +7,8 @@ import com.sigvip.modelo.Usuario;
 import com.sigvip.modelo.Visitante;
 import com.sigvip.modelo.enums.EstadoAutorizacion;
 import com.sigvip.modelo.enums.TipoRelacion;
+import com.sigvip.utilidades.TemaColors;
+import com.sigvip.vista.componentes.JDatePicker;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -48,7 +50,7 @@ public class VistaAutorizaciones extends JFrame {
 
     // Componentes de formulario de autorización
     private JComboBox<TipoRelacion> cmbTipoRelacion;
-    private JTextField txtFechaVencimiento;
+    private JDatePicker datePickerFechaVencimiento;
     private JTextArea txtObservaciones;
     private JButton btnCrearAutorizacion;
     private JButton btnLimpiarFormulario;
@@ -116,11 +118,11 @@ public class VistaAutorizaciones extends JFrame {
     private JPanel crearPanelTitulo() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createEtchedBorder());
-        panel.setBackground(new Color(70, 130, 180));
+        panel.setBackground(TemaColors.FONDO_ENCABEZADO);
 
         JLabel lblTitulo = new JLabel("GESTIÓN DE AUTORIZACIONES DE VISITA", SwingConstants.CENTER);
         lblTitulo.setFont(new Font("Arial", Font.BOLD, 18));
-        lblTitulo.setForeground(Color.WHITE);
+        lblTitulo.setForeground(TemaColors.TEXTO_CLARO);
         lblTitulo.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         panel.add(lblTitulo, BorderLayout.CENTER);
@@ -146,9 +148,7 @@ public class VistaAutorizaciones extends JFrame {
         // Panel de botones
         JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         btnCrearAutorizacion = new JButton("Crear Autorización");
-        btnCrearAutorizacion.setFont(new Font("Arial", Font.BOLD, 12));
-        btnCrearAutorizacion.setBackground(new Color(34, 139, 34));
-        btnCrearAutorizacion.setForeground(Color.WHITE);
+        TemaColors.aplicarEstiloBotonAccion(btnCrearAutorizacion);
         btnCrearAutorizacion.addActionListener(e -> crearAutorizacion());
 
         btnLimpiarFormulario = new JButton("Limpiar");
@@ -171,22 +171,35 @@ public class VistaAutorizaciones extends JFrame {
         JPanel panel = new JPanel(new BorderLayout(5, 5));
         panel.setBorder(BorderFactory.createTitledBorder("1. Buscar Visitante"));
 
-        JPanel panelBusqueda = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        panelBusqueda.add(new JLabel("DNI:"));
+        JPanel panelBusqueda = new JPanel(new BorderLayout(5, 5));
+
+        // Panel de búsqueda rápida por DNI
+        JPanel panelBusquedaRapida = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        panelBusquedaRapida.add(new JLabel("DNI (opcional):"));
 
         txtDniVisitante = new JTextField(15);
-        panelBusqueda.add(txtDniVisitante);
+        txtDniVisitante.setToolTipText("Ingrese DNI si lo conoce, o use el botón de búsqueda avanzada");
+        panelBusquedaRapida.add(txtDniVisitante);
 
-        btnBuscarVisitante = new JButton("Buscar");
-        btnBuscarVisitante.addActionListener(e -> buscarVisitante());
-        panelBusqueda.add(btnBuscarVisitante);
+        JButton btnBuscarPorDni = new JButton("Buscar por DNI");
+        btnBuscarPorDni.addActionListener(e -> buscarVisitantePorDni());
+        panelBusquedaRapida.add(btnBuscarPorDni);
 
+        JButton btnBusquedaAvanzada = new JButton("Búsqueda Avanzada");
+        btnBusquedaAvanzada.addActionListener(e -> buscarVisitanteAvanzada());
+        panelBusquedaRapida.add(btnBusquedaAvanzada);
+
+        panelBusqueda.add(panelBusquedaRapida, BorderLayout.NORTH);
+
+        // Panel de información del visitante seleccionado
         lblVisitanteSeleccionado = new JLabel("Ningún visitante seleccionado");
         lblVisitanteSeleccionado.setFont(new Font("Arial", Font.ITALIC, 11));
-        lblVisitanteSeleccionado.setForeground(Color.GRAY);
+        lblVisitanteSeleccionado.setForeground(TemaColors.TEXTO_SECUNDARIO);
+        lblVisitanteSeleccionado.setBorder(BorderFactory.createEmptyBorder(10, 5, 10, 5));
 
-        panel.add(panelBusqueda, BorderLayout.NORTH);
-        panel.add(lblVisitanteSeleccionado, BorderLayout.CENTER);
+        panelBusqueda.add(lblVisitanteSeleccionado, BorderLayout.CENTER);
+
+        panel.add(panelBusqueda, BorderLayout.CENTER);
 
         return panel;
     }
@@ -198,22 +211,35 @@ public class VistaAutorizaciones extends JFrame {
         JPanel panel = new JPanel(new BorderLayout(5, 5));
         panel.setBorder(BorderFactory.createTitledBorder("2. Buscar Interno"));
 
-        JPanel panelBusqueda = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        panelBusqueda.add(new JLabel("Legajo:"));
+        JPanel panelBusqueda = new JPanel(new BorderLayout(5, 5));
+
+        // Panel de búsqueda rápida por legajo
+        JPanel panelBusquedaRapida = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        panelBusquedaRapida.add(new JLabel("Legajo (opcional):"));
 
         txtLegajoInterno = new JTextField(15);
-        panelBusqueda.add(txtLegajoInterno);
+        txtLegajoInterno.setToolTipText("Ingrese legajo si lo conoce, o use el botón de búsqueda avanzada");
+        panelBusquedaRapida.add(txtLegajoInterno);
 
-        btnBuscarInterno = new JButton("Buscar");
-        btnBuscarInterno.addActionListener(e -> buscarInterno());
-        panelBusqueda.add(btnBuscarInterno);
+        JButton btnBuscarPorLegajo = new JButton("Buscar por Legajo");
+        btnBuscarPorLegajo.addActionListener(e -> buscarInternoPorLegajo());
+        panelBusquedaRapida.add(btnBuscarPorLegajo);
 
+        JButton btnBusquedaAvanzadaInterno = new JButton("Búsqueda Avanzada");
+        btnBusquedaAvanzadaInterno.addActionListener(e -> buscarInternoAvanzado());
+        panelBusquedaRapida.add(btnBusquedaAvanzadaInterno);
+
+        panelBusqueda.add(panelBusquedaRapida, BorderLayout.NORTH);
+
+        // Panel de información del interno seleccionado
         lblInternoSeleccionado = new JLabel("Ningún interno seleccionado");
         lblInternoSeleccionado.setFont(new Font("Arial", Font.ITALIC, 11));
-        lblInternoSeleccionado.setForeground(Color.GRAY);
+        lblInternoSeleccionado.setForeground(TemaColors.TEXTO_SECUNDARIO);
+        lblInternoSeleccionado.setBorder(BorderFactory.createEmptyBorder(10, 5, 10, 5));
 
-        panel.add(panelBusqueda, BorderLayout.NORTH);
-        panel.add(lblInternoSeleccionado, BorderLayout.CENTER);
+        panelBusqueda.add(lblInternoSeleccionado, BorderLayout.CENTER);
+
+        panel.add(panelBusqueda, BorderLayout.CENTER);
 
         return panel;
     }
@@ -244,9 +270,9 @@ public class VistaAutorizaciones extends JFrame {
         panel.add(new JLabel("Fecha Vencimiento:"), gbc);
 
         gbc.gridx = 1;
-        txtFechaVencimiento = new JTextField(15);
-        txtFechaVencimiento.setToolTipText("Formato: dd/MM/yyyy (dejar vacío para autorización indefinida)");
-        panel.add(txtFechaVencimiento, gbc);
+        datePickerFechaVencimiento = new JDatePicker();
+        datePickerFechaVencimiento.setToolTipText("Use el botón 'Cal' para seleccionar fecha (opcional)");
+        panel.add(datePickerFechaVencimiento, gbc);
 
         // Observaciones
         gbc.gridx = 0;
@@ -322,25 +348,22 @@ public class VistaAutorizaciones extends JFrame {
         JPanel panelAcciones = new JPanel(new FlowLayout(FlowLayout.LEFT));
 
         btnSuspender = new JButton("Suspender");
-        btnSuspender.setBackground(new Color(255, 165, 0));
+        TemaColors.aplicarEstiloBoton(btnSuspender, TemaColors.BOTON_EDICION);
         btnSuspender.addActionListener(e -> suspenderAutorizacion());
         panelAcciones.add(btnSuspender);
 
         btnReactivar = new JButton("Reactivar");
-        btnReactivar.setBackground(new Color(34, 139, 34));
-        btnReactivar.setForeground(Color.WHITE);
+        TemaColors.aplicarEstiloBotonAccion(btnReactivar);
         btnReactivar.addActionListener(e -> reactivarAutorizacion());
         panelAcciones.add(btnReactivar);
 
         btnRenovar = new JButton("Renovar");
-        btnRenovar.setBackground(new Color(70, 130, 180));
-        btnRenovar.setForeground(Color.WHITE);
+        TemaColors.aplicarEstiloBoton(btnRenovar, TemaColors.ACENTO_AUTORIZACIONES);
         btnRenovar.addActionListener(e -> renovarAutorizacion());
         panelAcciones.add(btnRenovar);
 
         btnRevocar = new JButton("Revocar");
-        btnRevocar.setBackground(new Color(178, 34, 34));
-        btnRevocar.setForeground(Color.WHITE);
+        TemaColors.aplicarEstiloBotonPeligro(btnRevocar);
         btnRevocar.addActionListener(e -> revocarAutorizacion());
         panelAcciones.add(btnRevocar);
 
@@ -352,9 +375,9 @@ public class VistaAutorizaciones extends JFrame {
     }
 
     /**
-     * Busca un visitante por DNI.
+     * Busca un visitante por DNI (búsqueda rápida).
      */
-    private void buscarVisitante() {
+    private void buscarVisitantePorDni() {
         String dni = txtDniVisitante.getText().trim();
 
         if (dni.isEmpty()) {
@@ -373,15 +396,7 @@ public class VistaAutorizaciones extends JFrame {
                     "No se encontró ningún visitante con DNI: " + dni,
                     "Visitante no encontrado",
                     JOptionPane.INFORMATION_MESSAGE);
-                lblVisitanteSeleccionado.setText("Ningún visitante seleccionado");
-                lblVisitanteSeleccionado.setForeground(Color.GRAY);
-            } else {
-                lblVisitanteSeleccionado.setText(
-                    String.format("✓ %s (DNI: %s) - Estado: %s",
-                        visitanteSeleccionado.getNombreCompleto(),
-                        visitanteSeleccionado.getDni(),
-                        visitanteSeleccionado.getEstado()));
-                lblVisitanteSeleccionado.setForeground(new Color(34, 139, 34));
+                actualizarLabelVisitante();
             }
 
         } catch (SQLException ex) {
@@ -393,9 +408,9 @@ public class VistaAutorizaciones extends JFrame {
     }
 
     /**
-     * Busca un interno por legajo.
+     * Busca un interno por legajo (búsqueda rápida).
      */
-    private void buscarInterno() {
+    private void buscarInternoPorLegajo() {
         String legajo = txtLegajoInterno.getText().trim();
 
         if (legajo.isEmpty()) {
@@ -414,18 +429,7 @@ public class VistaAutorizaciones extends JFrame {
                     "No se encontró ningún interno con legajo: " + legajo,
                     "Interno no encontrado",
                     JOptionPane.INFORMATION_MESSAGE);
-                lblInternoSeleccionado.setText("Ningún interno seleccionado");
-                lblInternoSeleccionado.setForeground(Color.GRAY);
-            } else {
-                lblInternoSeleccionado.setText(
-                    String.format("✓ %s (Legajo: %s) - Ubicación: %s, Piso %s",
-                        internoSeleccionado.getNombreCompleto(),
-                        internoSeleccionado.getNumeroLegajo(),
-                        internoSeleccionado.getPabellonActual() != null ?
-                            internoSeleccionado.getPabellonActual() : "N/A",
-                        internoSeleccionado.getPisoActual() != null ?
-                            internoSeleccionado.getPisoActual() : "N/A"));
-                lblInternoSeleccionado.setForeground(new Color(34, 139, 34));
+                actualizarLabelInterno();
             }
 
         } catch (SQLException ex) {
@@ -433,6 +437,67 @@ public class VistaAutorizaciones extends JFrame {
                 "Error al buscar interno: " + ex.getMessage(),
                 "Error de Base de Datos",
                 JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    /**
+     * Abre el diálogo de búsqueda avanzada de visitantes.
+     */
+    private void buscarVisitanteAvanzada() {
+        Visitante visitante = DialogoBusquedaVisitante.mostrarDialogo(this);
+        if (visitante != null) {
+            visitanteSeleccionado = visitante;
+            txtDniVisitante.setText(visitante.getDni());
+            actualizarLabelVisitante();
+        }
+    }
+
+    /**
+     * Abre el diálogo de búsqueda avanzada de internos.
+     */
+    private void buscarInternoAvanzado() {
+        Interno interno = DialogoBusquedaInterno.mostrarDialogo(this);
+        if (interno != null) {
+            internoSeleccionado = interno;
+            txtLegajoInterno.setText(interno.getNumeroLegajo());
+            actualizarLabelInterno();
+        }
+    }
+
+    /**
+     * Actualiza el label del visitante seleccionado.
+     */
+    private void actualizarLabelVisitante() {
+        if (visitanteSeleccionado == null) {
+            lblVisitanteSeleccionado.setText("Ningún visitante seleccionado");
+            lblVisitanteSeleccionado.setForeground(TemaColors.TEXTO_SECUNDARIO);
+        } else {
+            lblVisitanteSeleccionado.setText(
+                String.format("[OK] %s (%s) - %s",
+                    visitanteSeleccionado.getNombreCompleto(),
+                    visitanteSeleccionado.getDni(),
+                    visitanteSeleccionado.getEstado()));
+            lblVisitanteSeleccionado.setForeground(TemaColors.ESTADO_EXITO);
+        }
+    }
+
+    /**
+     * Actualiza el label del interno seleccionado.
+     */
+    private void actualizarLabelInterno() {
+        if (internoSeleccionado == null) {
+            lblInternoSeleccionado.setText("Ningún interno seleccionado");
+            lblInternoSeleccionado.setForeground(TemaColors.TEXTO_SECUNDARIO);
+        } else {
+            lblInternoSeleccionado.setText(
+                String.format("[OK] %s (Legajo: %s) - Ubicación: %s, Piso %s",
+                    internoSeleccionado.getNombreCompleto(),
+                    internoSeleccionado.getNumeroLegajo(),
+                    internoSeleccionado.getPabellonActual() != null ?
+                        internoSeleccionado.getPabellonActual() : "N/A",
+                    internoSeleccionado.getPisoActual() > 0 ?
+                        String.valueOf(internoSeleccionado.getPisoActual()) : "N/A"));
+            lblInternoSeleccionado.setForeground(TemaColors.ESTADO_EXITO);
         }
     }
 
@@ -459,22 +524,8 @@ public class VistaAutorizaciones extends JFrame {
 
         // Obtener datos del formulario
         TipoRelacion tipoRelacion = (TipoRelacion) cmbTipoRelacion.getSelectedItem();
-        String fechaVencimientoStr = txtFechaVencimiento.getText().trim();
+        Date fechaVencimiento = datePickerFechaVencimiento.getFecha();
         String observaciones = txtObservaciones.getText().trim();
-
-        // Parsear fecha de vencimiento (si existe)
-        Date fechaVencimiento = null;
-        if (!fechaVencimientoStr.isEmpty()) {
-            try {
-                fechaVencimiento = DATE_FORMAT.parse(fechaVencimientoStr);
-            } catch (ParseException ex) {
-                JOptionPane.showMessageDialog(this,
-                    "Formato de fecha inválido. Use dd/MM/yyyy\nEjemplo: 31/12/2025",
-                    "Error en Fecha",
-                    JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-        }
 
         // Confirmar creación
         int opcion = JOptionPane.showConfirmDialog(this,
@@ -543,12 +594,10 @@ public class VistaAutorizaciones extends JFrame {
         txtLegajoInterno.setText("");
         visitanteSeleccionado = null;
         internoSeleccionado = null;
-        lblVisitanteSeleccionado.setText("Ningún visitante seleccionado");
-        lblVisitanteSeleccionado.setForeground(Color.GRAY);
-        lblInternoSeleccionado.setText("Ningún interno seleccionado");
-        lblInternoSeleccionado.setForeground(Color.GRAY);
+        actualizarLabelVisitante();
+        actualizarLabelInterno();
         cmbTipoRelacion.setSelectedIndex(0);
-        txtFechaVencimiento.setText("");
+        datePickerFechaVencimiento.limpiar(); // Restablecer a fecha actual
         txtObservaciones.setText("");
     }
 
@@ -587,7 +636,7 @@ public class VistaAutorizaciones extends JFrame {
                     aut.getFechaVencimiento() != null ?
                         DATE_FORMAT.format(aut.getFechaVencimiento()) : "Indefinida",
                     aut.getEstado() != null ? aut.getEstado().name() : "N/A",
-                    aut.estaVigente() ? "SÍ" : "NO"
+                    aut.estaVigente() ? "SI" : "NO"
                 };
                 modeloTabla.addRow(fila);
             }

@@ -292,7 +292,7 @@ Validación automática de 6 pasos críticos:
 - Búsqueda por legajo y DNI
 - Gestión de ubicación (pabellón, piso)
 - Control de estados: ACTIVO, TRASLADADO, EGRESADO
-- Situación procesal: PROCESADO, CONDENADO, PREVENTIVO
+- Situación procesal: PROCESADO, CONDENADO
 - Acciones: Actualizar ubicación, cambiar estado, registrar traslado
 - Filtros por estado y situación procesal
 - Auditoría completa de cambios en observaciones

@@ -6,12 +6,13 @@ import com.sigvip.modelo.Interno;
 import com.sigvip.modelo.Usuario;
 import com.sigvip.modelo.enums.EstadoInterno;
 import com.sigvip.modelo.enums.SituacionProcesal;
+import com.sigvip.utilidades.TemaColors;
+import com.sigvip.vista.componentes.JDatePicker;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.sql.SQLException;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -33,14 +34,15 @@ public class VistaGestionInternos extends JFrame {
 
     private final Usuario usuarioActual;
     private final ControladorInternos controlador;
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yyyy");
 
     // Componentes del formulario
     private JTextField txtLegajo;
     private JTextField txtApellido;
     private JTextField txtNombre;
     private JTextField txtDNI;
-    private JTextField txtFechaNacimiento;
-    private JTextField txtFechaIngreso;
+    private JDatePicker datePickerFechaNacimiento;
+    private JDatePicker datePickerFechaIngreso;
     private JComboBox<SituacionProcesal> cmbSituacionProcesal;
     private JTextField txtPabellon;
     private JTextField txtPiso;
@@ -64,8 +66,6 @@ public class VistaGestionInternos extends JFrame {
     private JButton btnActualizarUbicacion;
     private JButton btnCambiarEstado;
     private JButton btnRegistrarTraslado;
-
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yyyy");
 
     /**
      * Constructor de la vista.
@@ -118,11 +118,11 @@ public class VistaGestionInternos extends JFrame {
     private JPanel crearPanelTitulo() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createEtchedBorder());
-        panel.setBackground(new Color(70, 130, 180));
+        panel.setBackground(TemaColors.FONDO_ENCABEZADO);
 
         JLabel lblTitulo = new JLabel("GESTIÓN DE INTERNOS", SwingConstants.CENTER);
         lblTitulo.setFont(new Font("Arial", Font.BOLD, 18));
-        lblTitulo.setForeground(Color.WHITE);
+        lblTitulo.setForeground(TemaColors.TEXTO_CLARO);
         lblTitulo.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         panel.add(lblTitulo, BorderLayout.CENTER);
@@ -233,19 +233,19 @@ public class VistaGestionInternos extends JFrame {
         fila++;
         gbc.gridx = 0;
         gbc.gridy = fila;
-        panelCampos.add(new JLabel("Fecha Nac. (dd/MM/yyyy): *"), gbc);
+        panelCampos.add(new JLabel("Fecha Nacimiento: *"), gbc);
         gbc.gridx = 1;
-        txtFechaNacimiento = new JTextField(20);
-        panelCampos.add(txtFechaNacimiento, gbc);
+        datePickerFechaNacimiento = new JDatePicker();
+        panelCampos.add(datePickerFechaNacimiento, gbc);
 
         // Fecha de Ingreso
         fila++;
         gbc.gridx = 0;
         gbc.gridy = fila;
-        panelCampos.add(new JLabel("Fecha Ingreso (dd/MM/yyyy): *"), gbc);
+        panelCampos.add(new JLabel("Fecha Ingreso: *"), gbc);
         gbc.gridx = 1;
-        txtFechaIngreso = new JTextField(20);
-        panelCampos.add(txtFechaIngreso, gbc);
+        datePickerFechaIngreso = new JDatePicker();
+        panelCampos.add(datePickerFechaIngreso, gbc);
 
         // Situación Procesal
         fila++;
@@ -306,9 +306,7 @@ public class VistaGestionInternos extends JFrame {
         panelBotones.add(btnLimpiar);
 
         btnRegistrar = new JButton("Registrar Interno");
-        btnRegistrar.setFont(new Font("Arial", Font.BOLD, 12));
-        btnRegistrar.setBackground(new Color(34, 139, 34));
-        btnRegistrar.setForeground(Color.WHITE);
+        TemaColors.aplicarEstiloBotonAccion(btnRegistrar);
         btnRegistrar.addActionListener(e -> registrarInterno());
         panelBotones.add(btnRegistrar);
 
@@ -371,20 +369,17 @@ public class VistaGestionInternos extends JFrame {
         JPanel panelAcciones = new JPanel(new FlowLayout(FlowLayout.LEFT));
 
         btnActualizarUbicacion = new JButton("Actualizar Ubicación");
-        btnActualizarUbicacion.setBackground(new Color(52, 152, 219));
-        btnActualizarUbicacion.setForeground(Color.WHITE);
+        TemaColors.aplicarEstiloBoton(btnActualizarUbicacion, TemaColors.BOTON_INFO);
         btnActualizarUbicacion.addActionListener(e -> actualizarUbicacion());
         panelAcciones.add(btnActualizarUbicacion);
 
         btnCambiarEstado = new JButton("Cambiar Estado");
-        btnCambiarEstado.setBackground(new Color(155, 89, 182));
-        btnCambiarEstado.setForeground(Color.WHITE);
+        TemaColors.aplicarEstiloBoton(btnCambiarEstado, TemaColors.ACENTO_INTERNOS);
         btnCambiarEstado.addActionListener(e -> cambiarEstado());
         panelAcciones.add(btnCambiarEstado);
 
         btnRegistrarTraslado = new JButton("Registrar Traslado");
-        btnRegistrarTraslado.setBackground(new Color(230, 126, 34));
-        btnRegistrarTraslado.setForeground(Color.WHITE);
+        TemaColors.aplicarEstiloBoton(btnRegistrarTraslado, TemaColors.BOTON_EDICION);
         btnRegistrarTraslado.addActionListener(e -> registrarTraslado());
         panelAcciones.add(btnRegistrarTraslado);
 
@@ -426,8 +421,8 @@ public class VistaGestionInternos extends JFrame {
         String apellido = txtApellido.getText().trim();
         String nombre = txtNombre.getText().trim();
         String dni = txtDNI.getText().trim();
-        String fechaNacStr = txtFechaNacimiento.getText().trim();
-        String fechaIngStr = txtFechaIngreso.getText().trim();
+        Date fechaNac = datePickerFechaNacimiento.getFecha();
+        Date fechaIng = datePickerFechaIngreso.getFecha();
         SituacionProcesal situacion = (SituacionProcesal) cmbSituacionProcesal.getSelectedItem();
         String pabellon = txtPabellon.getText().trim();
         String piso = txtPiso.getText().trim();
@@ -452,31 +447,9 @@ public class VistaGestionInternos extends JFrame {
             return;
         }
 
-        // Parsear fechas
-        Date fechaNacimiento = null;
-        Date fechaIngreso = null;
-
-        try {
-            fechaNacimiento = DATE_FORMAT.parse(fechaNacStr);
-        } catch (ParseException ex) {
-            JOptionPane.showMessageDialog(this,
-                "Formato de fecha de nacimiento inválido. Use dd/MM/yyyy",
-                "Error en Fecha",
-                JOptionPane.ERROR_MESSAGE);
-            txtFechaNacimiento.requestFocus();
-            return;
-        }
-
-        try {
-            fechaIngreso = DATE_FORMAT.parse(fechaIngStr);
-        } catch (ParseException ex) {
-            JOptionPane.showMessageDialog(this,
-                "Formato de fecha de ingreso inválido. Use dd/MM/yyyy",
-                "Error en Fecha",
-                JOptionPane.ERROR_MESSAGE);
-            txtFechaIngreso.requestFocus();
-            return;
-        }
+        // Obtener fechas de los JDatePickers
+        Date fechaNacimiento = datePickerFechaNacimiento.getFecha();
+        Date fechaIngreso = datePickerFechaIngreso.getFecha();
 
         // Confirmar registro
         int opcion = JOptionPane.showConfirmDialog(this,
@@ -548,8 +521,8 @@ public class VistaGestionInternos extends JFrame {
         txtApellido.setText("");
         txtNombre.setText("");
         txtDNI.setText("");
-        txtFechaNacimiento.setText("");
-        txtFechaIngreso.setText("");
+        datePickerFechaNacimiento.limpiar();
+        datePickerFechaIngreso.limpiar();
         cmbSituacionProcesal.setSelectedIndex(0);
         txtPabellon.setText("");
         txtPiso.setText("");
@@ -651,7 +624,7 @@ public class VistaGestionInternos extends JFrame {
                 DATE_FORMAT.format(interno.getFechaIngreso()) : "N/A",
             interno.getSituacionProcesal(),
             interno.getPabellonActual() != null ? interno.getPabellonActual() : "N/A",
-            interno.getPisoActual() != null ? interno.getPisoActual() : "N/A",
+            interno.getPisoActual() > 0 ? String.valueOf(interno.getPisoActual()) : "N/A",
             interno.getEstado(),
             interno.getObservaciones() != null ? interno.getObservaciones() : "Sin observaciones"
         );
@@ -694,7 +667,7 @@ public class VistaGestionInternos extends JFrame {
                     interno.getDni(),
                     interno.getSituacionProcesal(),
                     interno.getPabellonActual() != null ? interno.getPabellonActual() : "N/A",
-                    interno.getPisoActual() != null ? interno.getPisoActual() : "N/A",
+                    interno.getPisoActual() > 0 ? String.valueOf(interno.getPisoActual()) : "N/A",
                     interno.getFechaIngreso() != null ?
                         DATE_FORMAT.format(interno.getFechaIngreso()) : "N/A",
                     interno.getEstado()

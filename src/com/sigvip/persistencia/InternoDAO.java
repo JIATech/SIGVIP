@@ -8,10 +8,14 @@ import com.sigvip.modelo.enums.SituacionProcesal;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * DAO para operaciones CRUD de la entidad Interno.
  * Implementa el acceso a la tabla 'internos' de la base de datos.
+ *
+ * <p>Modo Offline: Si no hay conexión a MySQL, usa RepositorioMemoria (datos en RAM).
+ * Modo Online: Funcionamiento normal con JDBC y MySQL.
  *
  * Especificación: PDF Sección 11.2.3 - Capa de Persistencia
  * Seguridad: Todas las consultas usan PreparedStatement
@@ -32,6 +36,12 @@ public class InternoDAO {
      * @throws SQLException si ocurre un error
      */
     public Long insertar(Interno interno) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().insertarInterno(interno);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "INSERT INTO internos (numero_legajo, apellido, nombre, dni, " +
                     "id_establecimiento, pabellon_actual, piso_actual, fecha_ingreso, " +
                     "unidad_procedencia, situacion_procesal, estado) " +
@@ -81,6 +91,12 @@ public class InternoDAO {
      * @throws SQLException si ocurre un error
      */
     public Interno buscarPorId(Long id) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().buscarInternoPorId(id);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT * FROM internos WHERE id_interno = ?";
 
         try (Connection conn = conexionBD.getConexion();
@@ -106,6 +122,12 @@ public class InternoDAO {
      * @throws SQLException si ocurre un error
      */
     public Interno buscarPorLegajo(String numeroLegajo) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria (CRÍTICO)
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().buscarInternoPorLegajo(numeroLegajo);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT * FROM internos WHERE numero_legajo = ?";
 
         try (Connection conn = conexionBD.getConexion();
@@ -209,6 +231,12 @@ public class InternoDAO {
      * @throws SQLException si ocurre un error
      */
     public List<Interno> obtenerTodos() throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().listarInternos();
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT * FROM internos ORDER BY apellido, nombre";
         List<Interno> internos = new ArrayList<>();
 
@@ -222,6 +250,17 @@ public class InternoDAO {
         }
 
         return internos;
+    }
+
+    /**
+     * Obtiene todos los internos (alias de obtenerTodos).
+     * Método de conveniencia para consistencia con otros DAOs.
+     *
+     * @return lista de todos los internos
+     * @throws SQLException si ocurre un error
+     */
+    public List<Interno> listarTodos() throws SQLException {
+        return obtenerTodos();
     }
 
     /**
@@ -374,5 +413,55 @@ public class InternoDAO {
         }
 
         return interno;
+    }
+
+    /**
+     * Obtiene internos por estado.
+     *
+     * @param estado estado del interno
+     * @return lista de internos con ese estado
+     * @throws SQLException si ocurre un error
+     */
+    public List<Interno> buscarPorEstado(EstadoInterno estado) throws SQLException {
+        String sql = "SELECT * FROM internos WHERE estado = ? ORDER BY apellido, nombre";
+        List<Interno> internos = new ArrayList<>();
+
+        try (Connection conn = conexionBD.getConexion();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, estado.name());
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    internos.add(mapearResultSet(rs));
+                }
+            }
+        }
+        return internos;
+    }
+
+    /**
+     * Obtiene internos por situación procesal.
+     *
+     * @param situacion situación procesal
+     * @return lista de internos con esa situación
+     * @throws SQLException si ocurre un error
+     */
+    public List<Interno> buscarPorSituacionProcesal(SituacionProcesal situacion) throws SQLException {
+        String sql = "SELECT * FROM internos WHERE situacion_procesal = ? ORDER BY apellido, nombre";
+        List<Interno> internos = new ArrayList<>();
+
+        try (Connection conn = conexionBD.getConexion();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, situacion.name());
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    internos.add(mapearResultSet(rs));
+                }
+            }
+        }
+        return internos;
     }
 }

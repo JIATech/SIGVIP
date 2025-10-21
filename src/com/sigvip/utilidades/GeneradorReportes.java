@@ -470,31 +470,31 @@ public class GeneradorReportes {
                 <meta charset="UTF-8">
                 <title>SIGVIP - Reporte</title>
                 <style>
-                """ + generarCSS() + """
+                %s
                 </style>
             </head>
             <body>
-            """;
+            """.formatted(generarCSS());
     }
 
     private String plantillaHTMLFin() {
         return """
                 <div class="footer">
                     <p><strong>SIGVIP</strong> - Sistema Integral de Gestión de Visitas Penitenciarias</p>
-                    <p>Generado el """ + formatoCompleto.format(new Date()) + """</p>
+                    <p>Generado el %s</p>
                 </div>
             </body>
             </html>
-            """;
+            """.formatted(formatoCompleto.format(new Date()));
     }
 
     private String encabezadoReporte(String titulo) {
         return """
             <div class="header">
-                <h1>""" + titulo + """</h1>
+                <h1>%s</h1>
                 <div class="logo">SIGVIP</div>
             </div>
-            """;
+            """.formatted(titulo);
     }
 
     private String tablaVisitas(List<Visita> visitas) {
@@ -648,7 +648,7 @@ public class GeneradorReportes {
             """;
     }
 
-    // ===== CLASE AUXILIAR PARA ESTADÍSTICAS =====
+    // ===== CLASE AUXILIAR PARA ESTADISTICAS =====
 
     private static class EstadisticasVisitas {
         int totalVisitas;

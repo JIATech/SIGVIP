@@ -6,6 +6,8 @@ import com.sigvip.persistencia.*;
 import com.sigvip.utilidades.ServicioValidacionSeguridad;
 import com.sigvip.utilidades.ServicioValidacionSeguridad.ResultadoValidacion;
 
+import javax.swing.*;
+
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
@@ -59,23 +61,64 @@ public class ControladorAcceso {
 
         System.out.println("\n=== INICIANDO PROCESO DE INGRESO ===");
 
-        // PASO 1: Validación de seguridad (6 pasos)
+        // Buscar el usuario operador para la validación
+        Usuario operador = null;
+        try {
+            operador = usuarioDAO.buscarPorNombreUsuario(nombreUsuarioOperador);
+        } catch (SQLException e) {
+            System.err.println("✗ Error buscando operador: " + e.getMessage());
+        }
+
+        // PASO 1: Validación de seguridad (6 pasos) - ahora con usuario
         ResultadoValidacion validacion = servicioValidacion.validarIngresoVisita(
-            dniVisitante, legajoInterno
+            dniVisitante, legajoInterno, operador
         );
 
         System.out.println(validacion.getMensajeCompleto());
 
         if (!validacion.isPermitido()) {
             System.err.println("✗ INGRESO DENEGADO");
+
+            // Mostrar diálogo con los errores
+            StringBuilder mensajeError = new StringBuilder("No se puede permitir el ingreso:\n\n");
+            for (String error : validacion.getErrores()) {
+                mensajeError.append("• ").append(error).append("\n");
+            }
+
+            JOptionPane.showMessageDialog(null, mensajeError.toString(),
+                                        "Ingreso Denegado", JOptionPane.ERROR_MESSAGE);
             return null;
+        }
+
+        // Verificar si requiere autorización inmediata
+        if (validacion.requiereAutorizacionInmediata()) {
+            int confirmacion = mostrarDialogoAutorizacionInmediata(validacion);
+            if (confirmacion != JOptionPane.YES_OPTION) {
+                System.out.println("✗ Autorización inmediata cancelada por el usuario");
+                return null;
+            }
+
+            // Crear la autorización inmediata
+            Autorizacion autorizacionCreada = servicioValidacion.crearAutorizacionInmediata(
+                validacion.getVisitante(),
+                validacion.getInterno(),
+                validacion.getOperador()
+            );
+
+            if (autorizacionCreada == null) {
+                JOptionPane.showMessageDialog(null,
+                    "Error al crear la autorización inmediata",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+                return null;
+            }
+
+            System.out.println("✓ Autorización inmediata creada exitosamente");
         }
 
         try {
             // PASO 2: Buscar entidades
             Visitante visitante = visitanteDAO.buscarPorDni(dniVisitante);
             Interno interno = internoDAO.buscarPorLegajo(legajoInterno);
-            Usuario operador = usuarioDAO.buscarPorNombreUsuario(nombreUsuarioOperador);
 
             if (visitante == null || interno == null || operador == null) {
                 System.err.println("✗ Error: No se encontraron las entidades necesarias");
@@ -402,5 +445,37 @@ public class ControladorAcceso {
         }
 
         System.out.println("========================\n");
+    }
+
+    /**
+     * Muestra un diálogo de confirmación para autorización inmediata.
+     *
+     * @param validacion resultado de la validación con los datos necesarios
+     * @return opción seleccionada por el usuario
+     */
+    private int mostrarDialogoAutorizacionInmediata(ResultadoValidacion validacion) {
+        StringBuilder mensaje = new StringBuilder();
+        mensaje.append("ADVERTENCIA: AUTORIZACIÓN INMEDIATA REQUERIDA\n\n");
+        mensaje.append("El visitante no tiene autorización previa para esta visita.\n\n");
+        mensaje.append("Datos de la visita:\n");
+        mensaje.append("• Visitante: ").append(validacion.getVisitante().getNombreCompleto()).append("\n");
+        mensaje.append("• Interno: ").append(validacion.getInterno().getNombreCompleto()).append("\n");
+        mensaje.append("• Operador: ").append(validacion.getOperador().getNombreCompleto()).append(" (").append(validacion.getOperador().getRol()).append(")\n\n");
+        mensaje.append("¿Desea autorizar esta visita inmediatamente?\n");
+        mensaje.append("• La autorización vencerá mañana a las 23:59\n");
+        mensaje.append("• Podrá registrar el ingreso inmediatamente después");
+
+        String[] opciones = {"Sí, autorizar ahora", "No, cancelar"};
+
+        return JOptionPane.showOptionDialog(
+            null,
+            mensaje.toString(),
+            "Autorización Inmediata",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.QUESTION_MESSAGE,
+            null,
+            opciones,
+            opciones[0]
+        );
     }
 }

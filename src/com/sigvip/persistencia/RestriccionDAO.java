@@ -178,6 +178,30 @@ public class RestriccionDAO {
     }
 
     /**
+     * Obtiene todas las restricciones activas.
+     * Método para reportes y gestión.
+     *
+     * @return lista de restricciones activas
+     * @throws SQLException si ocurre un error
+     */
+    public List<Restriccion> obtenerActivas() throws SQLException {
+        String sql = "SELECT * FROM restricciones WHERE activa = true " +
+                    "AND (fecha_fin IS NULL OR fecha_fin >= CURDATE()) " +
+                    "ORDER BY fecha_inicio DESC";
+        List<Restriccion> restricciones = new ArrayList<>();
+
+        try (Connection conn = conexionBD.getConexion();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                restricciones.add(mapearResultSet(rs));
+            }
+        }
+        return restricciones;
+    }
+
+    /**
      * Obtiene restricciones activas para un visitante.
      * Método CRÍTICO para RF003: Control de Ingreso.
      *
@@ -218,6 +242,12 @@ public class RestriccionDAO {
      */
     public List<Restriccion> obtenerRestriccionesAplicables(Long idVisitante, Long idInterno)
             throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria (CRÍTICO RF003)
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().listarRestriccionesAplicables(idVisitante, idInterno);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT * FROM restricciones WHERE id_visitante = ? AND activa = true " +
                     "AND fecha_inicio <= CURDATE() " +
                     "AND (fecha_fin IS NULL OR fecha_fin >= CURDATE()) " +

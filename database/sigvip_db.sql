@@ -59,7 +59,7 @@ CREATE TABLE internos (
     piso_actual TINYINT NOT NULL,
     fecha_ingreso DATE NOT NULL,
     unidad_procedencia VARCHAR(100),
-    situacion_procesal ENUM('PROCESADO','CONDENADO','PREVENTIVO') NOT NULL,
+    situacion_procesal ENUM('PROCESADO','CONDENADO') NOT NULL,
     estado ENUM('ACTIVO','TRASLADADO','EGRESADO') DEFAULT 'ACTIVO',
     INDEX idx_legajo (numero_legajo),
     INDEX idx_ubicacion (pabellon_actual, piso_actual),

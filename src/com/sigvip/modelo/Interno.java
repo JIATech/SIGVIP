@@ -26,7 +26,9 @@ public class Interno {
     private String pabellonActual;
     private int pisoActual;
     private Date fechaIngreso;
+    private Date fechaNacimiento;
     private String unidadProcedencia;
+    private String observaciones;
     private SituacionProcesal situacionProcesal;
     private EstadoInterno estado;
 
@@ -208,12 +210,28 @@ public class Interno {
         this.fechaIngreso = fechaIngreso;
     }
 
+    public Date getFechaNacimiento() {
+        return fechaNacimiento;
+    }
+
+    public void setFechaNacimiento(Date fechaNacimiento) {
+        this.fechaNacimiento = fechaNacimiento;
+    }
+
     public String getUnidadProcedencia() {
         return unidadProcedencia;
     }
 
     public void setUnidadProcedencia(String unidadProcedencia) {
         this.unidadProcedencia = unidadProcedencia;
+    }
+
+    public String getObservaciones() {
+        return observaciones;
+    }
+
+    public void setObservaciones(String observaciones) {
+        this.observaciones = observaciones;
     }
 
     public SituacionProcesal getSituacionProcesal() {

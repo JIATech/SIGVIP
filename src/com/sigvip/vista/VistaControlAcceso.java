@@ -3,10 +3,19 @@ package com.sigvip.vista;
 import com.sigvip.controlador.ControladorAcceso;
 import com.sigvip.modelo.Usuario;
 import com.sigvip.modelo.Visita;
+import com.sigvip.modelo.Visitante;
+import com.sigvip.modelo.Interno;
+import com.sigvip.modelo.enums.Rol;
+import com.sigvip.utilidades.TemaColors;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableRowSorter;
+import javax.swing.RowFilter;
+import javax.swing.RowFilter.Entry;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.text.SimpleDateFormat;
 import java.util.List;
 
@@ -37,6 +46,8 @@ public class VistaControlAcceso extends JFrame {
     // Componentes de ingreso
     private JTextField txtDniIngreso;
     private JTextField txtLegajoIngreso;
+    private JButton btnBuscarVisitanteIngreso;
+    private JButton btnBuscarInternoIngreso;
     private JButton btnRegistrarIngreso;
     private JTextArea txtResultadoIngreso;
 
@@ -48,6 +59,8 @@ public class VistaControlAcceso extends JFrame {
     // Tabla de visitas en curso
     private JTable tablaVisitas;
     private DefaultTableModel modeloTabla;
+    private JTextField txtFiltroVisitas;
+    private TableRowSorter<DefaultTableModel> sorterVisitas;
 
     // Formato de fecha
     private SimpleDateFormat formatoFecha = new SimpleDateFormat("dd/MM/yyyy HH:mm");
@@ -70,8 +83,8 @@ public class VistaControlAcceso extends JFrame {
      */
     private void configurarVentana() {
         setTitle("SIGVIP - Control de Acceso");
-        setSize(900, 700);
-        setMinimumSize(new Dimension(800, 600));
+        setSize(1000, 750); // Aumentado altura para instrucciones adicionales
+        setMinimumSize(new Dimension(900, 650)); // Aumentado mínimo para compatibilidad
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
     }
@@ -93,10 +106,17 @@ public class VistaControlAcceso extends JFrame {
 
         // Botón refrescar en la parte inferior
         JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        panelBotones.setBackground(TemaColors.FONDO_PRINCIPAL);
+        panelBotones.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
         JButton btnRefrescar = new JButton("Refrescar Visitas");
+        TemaColors.aplicarEstiloBotonInfo(btnRefrescar);
         btnRefrescar.addActionListener(e -> cargarVisitasEnCurso());
+
         JButton btnCerrar = new JButton("Cerrar");
+        TemaColors.aplicarEstiloBotonCancelar(btnCerrar);
         btnCerrar.addActionListener(e -> dispose());
+
         panelBotones.add(btnRefrescar);
         panelBotones.add(btnCerrar);
 
@@ -114,8 +134,16 @@ public class VistaControlAcceso extends JFrame {
 
         // Panel de instrucciones
         JPanel panelInfo = new JPanel(new BorderLayout());
-        panelInfo.setBorder(BorderFactory.createTitledBorder("Información"));
-        JTextArea txtInfo = new JTextArea(
+        panelInfo.setBackground(TemaColors.FONDO_PANEL);
+        panelInfo.setBorder(BorderFactory.createTitledBorder(
+            BorderFactory.createLineBorder(TemaColors.PRIMARIO, 1),
+            "Información",
+            0,
+            0,
+            new Font("Arial", Font.BOLD, 12),
+            TemaColors.PRIMARIO
+        ));
+        String infoBase =
             "RF003: Control de Ingreso con Validación Automática\n\n" +
             "El sistema validará automáticamente:\n" +
             "1. Visitante existe y está ACTIVO\n" +
@@ -123,64 +151,136 @@ public class VistaControlAcceso extends JFrame {
             "3. Visitante no tiene restricciones activas\n" +
             "4. Horario dentro del permitido por el establecimiento\n" +
             "5. Interno está disponible para recibir visitas\n" +
-            "6. Capacidad del establecimiento no superada"
-        );
+            "6. Capacidad del establecimiento no superada";
+
+        // Agregar información sobre autorización inmediata si el usuario tiene permisos
+        String infoAdicional = "";
+        if (usuarioActual != null && (usuarioActual.getRol() == Rol.ADMINISTRADOR ||
+                                     usuarioActual.getRol() == Rol.SUPERVISOR)) {
+            infoAdicional = "\n\n" +
+                "* AUTORIZACIÓN INMEDIATA (Tu rol: " + usuarioActual.getRol() + ")\n" +
+                "• Si el visitante no tiene autorización previa, el sistema te preguntará\n" +
+                "• Podrás autorizar inmediatamente la visita (vence al día siguiente)\n" +
+                "• Ideal para visitantes espontáneos o situaciones de emergencia";
+        }
+
+        JTextArea txtInfo = new JTextArea(infoBase + infoAdicional);
         txtInfo.setEditable(false);
-        txtInfo.setBackground(new Color(240, 248, 255));
+        txtInfo.setBackground(TemaColors.FONDO_PANEL);
+        txtInfo.setForeground(TemaColors.TEXTO_PRIMARIO);
         txtInfo.setFont(new Font("Arial", Font.PLAIN, 11));
-        panelInfo.add(new JScrollPane(txtInfo), BorderLayout.CENTER);
+        txtInfo.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        txtInfo.setLineWrap(true);
+        txtInfo.setWrapStyleWord(true);
+
+        // Configurar scrollpane con mejor visualización
+        JScrollPane scrollInfo = new JScrollPane(txtInfo);
+        scrollInfo.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollInfo.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollInfo.setPreferredSize(new Dimension(850, 180)); // Altura preferencial para el panel de info
+        panelInfo.add(scrollInfo, BorderLayout.CENTER);
 
         // Panel de formulario
         JPanel panelFormulario = new JPanel(new GridBagLayout());
-        panelFormulario.setBorder(BorderFactory.createTitledBorder("Datos del Ingreso"));
+        panelFormulario.setBackground(TemaColors.FONDO_PANEL);
+        panelFormulario.setBorder(BorderFactory.createTitledBorder(
+            BorderFactory.createLineBorder(TemaColors.PRIMARIO, 1),
+            "Datos del Ingreso",
+            0,
+            0,
+            new Font("Arial", Font.BOLD, 12),
+            TemaColors.PRIMARIO
+        ));
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.insets = new Insets(8, 8, 8, 8);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
         // DNI Visitante
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.weightx = 0.3;
-        panelFormulario.add(new JLabel("DNI Visitante:"), gbc);
+        JLabel lblDniVisitante = new JLabel("DNI Visitante:");
+        lblDniVisitante.setFont(new Font("Arial", Font.BOLD, 12));
+        lblDniVisitante.setForeground(TemaColors.TEXTO_PRIMARIO);
+        panelFormulario.add(lblDniVisitante, gbc);
 
         gbc.gridx = 1;
-        gbc.weightx = 0.7;
+        gbc.weightx = 0.5;
         txtDniIngreso = new JTextField(20);
+        txtDniIngreso.setBackground(Color.WHITE);
+        txtDniIngreso.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(TemaColors.PRIMARIO.darker(), 1),
+            BorderFactory.createEmptyBorder(5, 8, 5, 8)
+        ));
+        txtDniIngreso.setFont(new Font("Arial", Font.PLAIN, 12));
         txtDniIngreso.setToolTipText("Ingrese DNI sin puntos (ej: 12345678)");
         panelFormulario.add(txtDniIngreso, gbc);
+
+        gbc.gridx = 2;
+        gbc.weightx = 0.2;
+        btnBuscarVisitanteIngreso = new JButton("Buscar Visitante");
+        btnBuscarVisitanteIngreso.setPreferredSize(new Dimension(150, 30));
+        TemaColors.aplicarEstiloBoton(btnBuscarVisitanteIngreso, Color.WHITE);
+        btnBuscarVisitanteIngreso.addActionListener(e -> buscarVisitanteParaIngreso());
+        panelFormulario.add(btnBuscarVisitanteIngreso, gbc);
 
         // Legajo Interno
         gbc.gridx = 0;
         gbc.gridy = 1;
         gbc.weightx = 0.3;
-        panelFormulario.add(new JLabel("Legajo Interno:"), gbc);
+        JLabel lblLegajoInterno = new JLabel("Legajo Interno:");
+        lblLegajoInterno.setFont(new Font("Arial", Font.BOLD, 12));
+        lblLegajoInterno.setForeground(TemaColors.TEXTO_PRIMARIO);
+        panelFormulario.add(lblLegajoInterno, gbc);
 
         gbc.gridx = 1;
-        gbc.weightx = 0.7;
+        gbc.weightx = 0.5;
         txtLegajoIngreso = new JTextField(20);
+        txtLegajoIngreso.setBackground(Color.WHITE);
+        txtLegajoIngreso.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(TemaColors.PRIMARIO.darker(), 1),
+            BorderFactory.createEmptyBorder(5, 8, 5, 8)
+        ));
+        txtLegajoIngreso.setFont(new Font("Arial", Font.PLAIN, 12));
         txtLegajoIngreso.setToolTipText("Ingrese número de legajo del interno");
         panelFormulario.add(txtLegajoIngreso, gbc);
+
+        gbc.gridx = 2;
+        gbc.weightx = 0.2;
+        btnBuscarInternoIngreso = new JButton("Buscar Interno");
+        btnBuscarInternoIngreso.setPreferredSize(new Dimension(150, 30));
+        TemaColors.aplicarEstiloBoton(btnBuscarInternoIngreso, Color.WHITE);
+        btnBuscarInternoIngreso.addActionListener(e -> buscarInternoParaIngreso());
+        panelFormulario.add(btnBuscarInternoIngreso, gbc);
 
         // Botón Registrar Ingreso
         gbc.gridx = 0;
         gbc.gridy = 2;
-        gbc.gridwidth = 2;
+        gbc.gridwidth = 3;
         gbc.anchor = GridBagConstraints.CENTER;
         btnRegistrarIngreso = new JButton("Registrar Ingreso");
         btnRegistrarIngreso.setPreferredSize(new Dimension(200, 35));
-        btnRegistrarIngreso.setBackground(new Color(46, 204, 113));
-        btnRegistrarIngreso.setForeground(Color.WHITE);
-        btnRegistrarIngreso.setFocusPainted(false);
-        btnRegistrarIngreso.setFont(new Font("Arial", Font.BOLD, 14));
+        TemaColors.aplicarEstiloBoton(btnRegistrarIngreso, Color.WHITE);
         btnRegistrarIngreso.addActionListener(e -> registrarIngreso());
         panelFormulario.add(btnRegistrarIngreso, gbc);
 
         // Panel de resultado
         JPanel panelResultado = new JPanel(new BorderLayout());
-        panelResultado.setBorder(BorderFactory.createTitledBorder("Resultado de Validación"));
+        panelResultado.setBackground(TemaColors.FONDO_PANEL);
+        panelResultado.setBorder(BorderFactory.createTitledBorder(
+            BorderFactory.createLineBorder(TemaColors.PRIMARIO, 1),
+            "Resultado de Validación",
+            0,
+            0,
+            new Font("Arial", Font.BOLD, 12),
+            TemaColors.PRIMARIO
+        ));
         txtResultadoIngreso = new JTextArea(8, 40);
         txtResultadoIngreso.setEditable(false);
+        txtResultadoIngreso.setBackground(Color.WHITE);
+        txtResultadoIngreso.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         txtResultadoIngreso.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        txtResultadoIngreso.setForeground(TemaColors.TEXTO_PRIMARIO);
         panelResultado.add(new JScrollPane(txtResultadoIngreso), BorderLayout.CENTER);
 
         // Ensamblar panel
@@ -203,20 +303,37 @@ public class VistaControlAcceso extends JFrame {
 
         // Panel de formulario
         JPanel panelFormulario = new JPanel(new GridBagLayout());
-        panelFormulario.setBorder(BorderFactory.createTitledBorder("Registrar Egreso"));
+        panelFormulario.setBackground(TemaColors.FONDO_PANEL);
+        panelFormulario.setBorder(BorderFactory.createTitledBorder(
+            BorderFactory.createLineBorder(TemaColors.PRIMARIO, 1),
+            "Registrar Egreso",
+            0,
+            0,
+            new Font("Arial", Font.BOLD, 12),
+            TemaColors.PRIMARIO
+        ));
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.insets = new Insets(8, 8, 8, 8);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
         // ID Visita
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.weightx = 0.3;
-        panelFormulario.add(new JLabel("ID Visita:"), gbc);
+        JLabel lblIdVisita = new JLabel("ID Visita:");
+        lblIdVisita.setFont(new Font("Arial", Font.BOLD, 12));
+        lblIdVisita.setForeground(TemaColors.TEXTO_PRIMARIO);
+        panelFormulario.add(lblIdVisita, gbc);
 
         gbc.gridx = 1;
         gbc.weightx = 0.7;
         txtIdVisita = new JTextField(20);
+        txtIdVisita.setBackground(Color.WHITE);
+        txtIdVisita.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(TemaColors.PRIMARIO.darker(), 1),
+            BorderFactory.createEmptyBorder(5, 8, 5, 8)
+        ));
+        txtIdVisita.setFont(new Font("Arial", Font.PLAIN, 12));
         txtIdVisita.setToolTipText("Ingrese el ID de la visita a finalizar");
         panelFormulario.add(txtIdVisita, gbc);
 
@@ -224,10 +341,20 @@ public class VistaControlAcceso extends JFrame {
         gbc.gridx = 0;
         gbc.gridy = 1;
         gbc.gridwidth = 2;
-        panelFormulario.add(new JLabel("Observaciones (opcional):"), gbc);
+        JLabel lblObservaciones = new JLabel("Observaciones (opcional):");
+        lblObservaciones.setFont(new Font("Arial", Font.BOLD, 12));
+        lblObservaciones.setForeground(TemaColors.TEXTO_PRIMARIO);
+        panelFormulario.add(lblObservaciones, gbc);
 
         gbc.gridy = 2;
         txtObservaciones = new JTextArea(4, 30);
+        txtObservaciones.setBackground(Color.WHITE);
+        txtObservaciones.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(TemaColors.PRIMARIO.darker(), 1),
+            BorderFactory.createEmptyBorder(5, 8, 5, 8)
+        ));
+        txtObservaciones.setFont(new Font("Arial", Font.PLAIN, 12));
+        txtObservaciones.setForeground(TemaColors.TEXTO_PRIMARIO);
         txtObservaciones.setLineWrap(true);
         txtObservaciones.setWrapStyleWord(true);
         txtObservaciones.setToolTipText("Ingrese observaciones sobre el egreso");
@@ -239,10 +366,7 @@ public class VistaControlAcceso extends JFrame {
         gbc.anchor = GridBagConstraints.CENTER;
         btnRegistrarEgreso = new JButton("Registrar Egreso");
         btnRegistrarEgreso.setPreferredSize(new Dimension(200, 35));
-        btnRegistrarEgreso.setBackground(new Color(231, 76, 60));
-        btnRegistrarEgreso.setForeground(Color.WHITE);
-        btnRegistrarEgreso.setFocusPainted(false);
-        btnRegistrarEgreso.setFont(new Font("Arial", Font.BOLD, 14));
+        TemaColors.aplicarEstiloBotonPeligro(btnRegistrarEgreso); // Ahora será blanco con borde negro
         btnRegistrarEgreso.addActionListener(e -> registrarEgreso());
         panelFormulario.add(btnRegistrarEgreso, gbc);
 
@@ -255,8 +379,73 @@ public class VistaControlAcceso extends JFrame {
      * Crea el panel con la tabla de visitas en curso.
      */
     private JPanel crearPanelVisitasEnCurso() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBackground(TemaColors.FONDO_PANEL);
+        panel.setBorder(BorderFactory.createTitledBorder(
+            BorderFactory.createLineBorder(TemaColors.PRIMARIO, 1),
+            "Visitas En Curso",
+            0,
+            0,
+            new Font("Arial", Font.BOLD, 12),
+            TemaColors.PRIMARIO
+        ));
+
+        // Panel de búsqueda y filtrado
+        JPanel panelBusqueda = new JPanel(new BorderLayout(5, 5));
+        panelBusqueda.setBackground(TemaColors.FONDO_PANEL);
+        panelBusqueda.setBorder(BorderFactory.createTitledBorder(
+            BorderFactory.createLineBorder(TemaColors.PRIMARIO, 1),
+            "Filtrar Visitas",
+            0,
+            0,
+            new Font("Arial", Font.BOLD, 12),
+            TemaColors.PRIMARIO
+        ));
+
+        JPanel panelFiltro = new JPanel(new BorderLayout(5, 5));
+        panelFiltro.setBackground(TemaColors.FONDO_PANEL);
+        panelFiltro.add(new JLabel("Buscar (DNI, visitante, legajo, interno):"), BorderLayout.WEST);
+
+        txtFiltroVisitas = new JTextField();
+        txtFiltroVisitas.setBackground(Color.WHITE);
+        txtFiltroVisitas.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(TemaColors.PRIMARIO.darker(), 1),
+            BorderFactory.createEmptyBorder(5, 8, 5, 8)
+        ));
+        txtFiltroVisitas.setToolTipText("Ingrese texto para filtrar visitas activas");
+        txtFiltroVisitas.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { filtrarVisitas(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { filtrarVisitas(); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { filtrarVisitas(); }
+        });
+        panelFiltro.add(txtFiltroVisitas, BorderLayout.CENTER);
+
+        JButton btnLimpiarFiltro = new JButton("Limpiar");
+        TemaColors.aplicarEstiloBoton(btnLimpiarFiltro, Color.WHITE);
+        btnLimpiarFiltro.addActionListener(e -> {
+            txtFiltroVisitas.setText("");
+            cargarVisitasEnCurso();
+        });
+        panelFiltro.add(btnLimpiarFiltro, BorderLayout.EAST);
+
+        panelBusqueda.add(panelFiltro, BorderLayout.CENTER);
+
+        // Panel de botones de búsqueda
+        JPanel panelBotonesBusqueda = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        panelBotonesBusqueda.setBackground(TemaColors.FONDO_PANEL);
+
+        JButton btnVerTodosVisitantes = new JButton("Ver Todos los Visitantes");
+        TemaColors.aplicarEstiloBoton(btnVerTodosVisitantes, Color.WHITE);
+        btnVerTodosVisitantes.addActionListener(e -> verTodosLosVisitantes());
+        panelBotonesBusqueda.add(btnVerTodosVisitantes);
+
+        JButton btnVerTodosInternos = new JButton("Ver Todos los Internos");
+        TemaColors.aplicarEstiloBoton(btnVerTodosInternos, Color.WHITE);
+        btnVerTodosInternos.addActionListener(e -> verTodosLosInternos());
+        panelBotonesBusqueda.add(btnVerTodosInternos);
+
+        panelBusqueda.add(panelBotonesBusqueda, BorderLayout.SOUTH);
+        panel.add(panelBusqueda, BorderLayout.NORTH);
 
         // Tabla de visitas
         String[] columnas = {"ID", "DNI Visitante", "Visitante", "Legajo Interno",
@@ -269,8 +458,21 @@ public class VistaControlAcceso extends JFrame {
         };
 
         tablaVisitas = new JTable(modeloTabla);
+        tablaVisitas.setBackground(Color.WHITE);
+        tablaVisitas.setForeground(TemaColors.TEXTO_PRIMARIO);
+        tablaVisitas.setSelectionBackground(TemaColors.PRIMARIO);
+        tablaVisitas.setSelectionForeground(Color.WHITE);
+        tablaVisitas.setFont(new Font("Arial", Font.PLAIN, 11));
+        tablaVisitas.getTableHeader().setFont(new Font("Arial", Font.BOLD, 12));
+        tablaVisitas.getTableHeader().setForeground(TemaColors.TEXTO_CLARO);
+        tablaVisitas.getTableHeader().setBackground(TemaColors.PRIMARIO);
+        tablaVisitas.setGridColor(TemaColors.PRIMARIO);
         tablaVisitas.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         tablaVisitas.getTableHeader().setReorderingAllowed(false);
+
+        // Configurar ordenamiento y filtrado
+        sorterVisitas = new TableRowSorter<>(modeloTabla);
+        tablaVisitas.setRowSorter(sorterVisitas);
 
         // Ajustar anchos de columnas
         tablaVisitas.getColumnModel().getColumn(0).setPreferredWidth(50);  // ID
@@ -282,12 +484,15 @@ public class VistaControlAcceso extends JFrame {
         tablaVisitas.getColumnModel().getColumn(6).setPreferredWidth(80);  // Duración
 
         JScrollPane scrollPane = new JScrollPane(tablaVisitas);
+        scrollPane.setBackground(TemaColors.FONDO_PANEL);
         panel.add(scrollPane, BorderLayout.CENTER);
 
         // Panel de información
         JPanel panelInfo = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        panelInfo.setBackground(TemaColors.FONDO_PANEL);
         JLabel lblInfo = new JLabel("Doble click en una fila para usar su ID en el egreso");
         lblInfo.setFont(new Font("Arial", Font.ITALIC, 11));
+        lblInfo.setForeground(TemaColors.TEXTO_SECUNDARIO);
         panelInfo.add(lblInfo);
         panel.add(panelInfo, BorderLayout.SOUTH);
 
@@ -300,9 +505,10 @@ public class VistaControlAcceso extends JFrame {
                         String id = modeloTabla.getValueAt(row, 0).toString();
                         txtIdVisita.setText(id);
                         // Cambiar a la pestaña de egreso
-                        JTabbedPane parent = (JTabbedPane) VistaControlAcceso.this
+                        JPanel panelPrincipal = (JPanel) VistaControlAcceso.this
                             .getContentPane().getComponent(0);
-                        parent.setSelectedIndex(1);
+                        JTabbedPane tabbedPane = (JTabbedPane) panelPrincipal.getComponent(0);
+                        tabbedPane.setSelectedIndex(1);
                     }
                 }
             }
@@ -348,7 +554,7 @@ public class VistaControlAcceso extends JFrame {
                     if (idVisita != null) {
                         txtResultadoIngreso.append("\n✓ INGRESO AUTORIZADO\n");
                         txtResultadoIngreso.append("ID Visita: " + idVisita + "\n");
-                        txtResultadoIngreso.setForeground(new Color(0, 128, 0));
+                        txtResultadoIngreso.setForeground(TemaColors.ESTADO_EXITO);
 
                         // Limpiar campos
                         txtDniIngreso.setText("");
@@ -366,11 +572,11 @@ public class VistaControlAcceso extends JFrame {
                     } else {
                         txtResultadoIngreso.append("\n✗ INGRESO DENEGADO\n");
                         txtResultadoIngreso.append("Verifique la consola para más detalles\n");
-                        txtResultadoIngreso.setForeground(new Color(192, 0, 0));
+                        txtResultadoIngreso.setForeground(TemaColors.ESTADO_ERROR);
                     }
                 } catch (Exception e) {
                     txtResultadoIngreso.append("\n✗ ERROR: " + e.getMessage());
-                    txtResultadoIngreso.setForeground(Color.RED);
+                    txtResultadoIngreso.setForeground(TemaColors.ESTADO_ERROR);
                 } finally {
                     btnRegistrarIngreso.setEnabled(true);
                     btnRegistrarIngreso.setText("Registrar Ingreso");
@@ -472,8 +678,87 @@ public class VistaControlAcceso extends JFrame {
         }
 
         // Actualizar título de la pestaña
-        JTabbedPane parent = (JTabbedPane) getContentPane().getComponent(0);
-        parent.setTitleAt(2, "Visitas en Curso (" + visitas.size() + ")");
+        JPanel panelPrincipal = (JPanel) getContentPane().getComponent(0);
+        JTabbedPane tabbedPane = (JTabbedPane) panelPrincipal.getComponent(0);
+        tabbedPane.setTitleAt(2, "Visitas en Curso (" + visitas.size() + ")");
+    }
+
+    /**
+     * Busca un visitante mediante el diálogo avanzado y lo selecciona para ingreso.
+     */
+    private void buscarVisitanteParaIngreso() {
+        Visitante visitante = DialogoBusquedaVisitante.mostrarDialogo(this);
+        if (visitante != null) {
+            txtDniIngreso.setText(visitante.getDni());
+            JOptionPane.showMessageDialog(this,
+                "Visitante seleccionado: " + visitante.getNombreCompleto() +
+                "\nDNI: " + visitante.getDni(),
+                "Visitante Seleccionado",
+                JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+
+    /**
+     * Busca un interno mediante el diálogo avanzado y lo selecciona para ingreso.
+     */
+    private void buscarInternoParaIngreso() {
+        Interno interno = DialogoBusquedaInterno.mostrarDialogo(this);
+        if (interno != null) {
+            txtLegajoIngreso.setText(interno.getNumeroLegajo());
+            JOptionPane.showMessageDialog(this,
+                "Interno seleccionado: " + interno.getNombreCompleto() +
+                "\nLegajo: " + interno.getNumeroLegajo() +
+                "\nPabellón: " + interno.getPabellonActual() +
+                "\nPiso: " + interno.getPisoActual(),
+                "Interno Seleccionado",
+                JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+
+    /**
+     * Muestra la lista completa de todos los visitantes registrados.
+     */
+    private void verTodosLosVisitantes() {
+        DialogoBusquedaVisitante dialogo = new DialogoBusquedaVisitante(this);
+        dialogo.setTitle("Lista Completa de Visitantes Registrados");
+        dialogo.setSize(900, 600);
+        dialogo.setVisible(true);
+    }
+
+    /**
+     * Muestra la lista completa de todos los internos registrados.
+     */
+    private void verTodosLosInternos() {
+        DialogoBusquedaInterno dialogo = new DialogoBusquedaInterno(this);
+        dialogo.setTitle("Lista Completa de Internos Registrados");
+        dialogo.setSize(1000, 700);
+        dialogo.setVisible(true);
+    }
+
+    /**
+     * Filtra las visitas en curso según el texto ingresado.
+     */
+    private void filtrarVisitas() {
+        String textoFiltro = txtFiltroVisitas.getText().trim().toLowerCase();
+
+        if (textoFiltro.isEmpty()) {
+            // Si no hay filtro, mostrar todas las visitas
+            sorterVisitas.setRowFilter(null);
+        } else {
+            // Crear filtro simple usando regex para buscar en todas las columnas
+            try {
+                sorterVisitas.setRowFilter(RowFilter.regexFilter("(?i)" + textoFiltro, 1, 2, 3, 4));
+            } catch (java.util.regex.PatternSyntaxException e) {
+                // Si hay error en el patrón, no aplicar filtro
+                sorterVisitas.setRowFilter(null);
+            }
+        }
+
+        // Actualizar contador en el título
+        int totalFilas = tablaVisitas.getRowCount();
+        JPanel panelPrincipal = (JPanel) getContentPane().getComponent(0);
+        JTabbedPane tabbedPane = (JTabbedPane) panelPrincipal.getComponent(0);
+        tabbedPane.setTitleAt(2, "Visitas en Curso (" + totalFilas + ")");
     }
 
     /**

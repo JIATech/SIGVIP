@@ -6,10 +6,14 @@ import com.sigvip.modelo.enums.EstadoVisitante;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * DAO para operaciones CRUD de la entidad Visitante.
  * Implementa el acceso a la tabla 'visitantes' de la base de datos.
+ *
+ * <p>Modo Offline: Si no hay conexión a MySQL, usa RepositorioMemoria (datos en RAM).
+ * Modo Online: Funcionamiento normal con JDBC y MySQL.
  *
  * Especificación: PDF Sección 11.2.3 - Capa de Persistencia
  * Seguridad: Todas las consultas usan PreparedStatement para prevenir SQL Injection
@@ -33,6 +37,12 @@ public class VisitanteDAO {
      * @throws SQLException si ocurre un error en la inserción
      */
     public Long insertar(Visitante visitante) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().insertarVisitante(visitante);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "INSERT INTO visitantes (dni, apellido, nombre, fecha_nacimiento, " +
                     "telefono, domicilio, foto, estado, fecha_registro) " +
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -79,6 +89,12 @@ public class VisitanteDAO {
      * @throws SQLException si ocurre un error en la consulta
      */
     public Visitante buscarPorId(Long id) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().buscarVisitantePorId(id);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT * FROM visitantes WHERE id_visitante = ?";
 
         try (Connection conn = conexionBD.getConexion();
@@ -104,6 +120,12 @@ public class VisitanteDAO {
      * @throws SQLException si ocurre un error en la consulta
      */
     public Visitante buscarPorDni(String dni) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().buscarVisitantePorDNI(dni);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT * FROM visitantes WHERE dni = ?";
 
         try (Connection conn = conexionBD.getConexion();
@@ -128,6 +150,12 @@ public class VisitanteDAO {
      * @throws SQLException si ocurre un error en la actualización
      */
     public boolean actualizar(Visitante visitante) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().actualizarVisitante(visitante);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "UPDATE visitantes SET dni = ?, apellido = ?, nombre = ?, " +
                     "fecha_nacimiento = ?, telefono = ?, domicilio = ?, " +
                     "foto = ?, estado = ? WHERE id_visitante = ?";
@@ -160,6 +188,12 @@ public class VisitanteDAO {
      * @throws SQLException si ocurre un error en la eliminación
      */
     public boolean eliminar(Long id) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().eliminarVisitante(id);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "DELETE FROM visitantes WHERE id_visitante = ?";
 
         try (Connection conn = conexionBD.getConexion();
@@ -178,6 +212,12 @@ public class VisitanteDAO {
      * @throws SQLException si ocurre un error en la consulta
      */
     public List<Visitante> obtenerTodos() throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().listarVisitantes();
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT * FROM visitantes ORDER BY apellido, nombre";
         List<Visitante> visitantes = new ArrayList<>();
 
@@ -201,6 +241,14 @@ public class VisitanteDAO {
      * @throws SQLException si ocurre un error en la consulta
      */
     public List<Visitante> buscarPorEstado(EstadoVisitante estado) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria con filtro
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().listarVisitantes().stream()
+                    .filter(v -> v.getEstado() == estado)
+                    .collect(Collectors.toList());
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT * FROM visitantes WHERE estado = ? ORDER BY apellido, nombre";
         List<Visitante> visitantes = new ArrayList<>();
 
@@ -227,6 +275,16 @@ public class VisitanteDAO {
      * @throws SQLException si ocurre un error en la consulta
      */
     public List<Visitante> buscarPorApellido(String apellido) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria con filtro
+        if (GestorModo.getInstancia().isModoOffline()) {
+            String apellidoLower = apellido.toLowerCase();
+            return RepositorioMemoria.getInstancia().listarVisitantes().stream()
+                    .filter(v -> v.getApellido() != null &&
+                                 v.getApellido().toLowerCase().contains(apellidoLower))
+                    .collect(Collectors.toList());
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT * FROM visitantes WHERE apellido LIKE ? ORDER BY apellido, nombre";
         List<Visitante> visitantes = new ArrayList<>();
 
@@ -252,6 +310,12 @@ public class VisitanteDAO {
      * @throws SQLException si ocurre un error en la consulta
      */
     public int contarTotal() throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().listarVisitantes().size();
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT COUNT(*) FROM visitantes";
 
         try (Connection conn = conexionBD.getConexion();

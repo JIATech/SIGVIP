@@ -4,6 +4,7 @@ import com.sigvip.controlador.ControladorUsuarios;
 import com.sigvip.modelo.Establecimiento;
 import com.sigvip.modelo.Usuario;
 import com.sigvip.modelo.enums.Rol;
+import com.sigvip.utilidades.TemaColors;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -203,7 +204,7 @@ public class VistaGestionUsuarios extends JFrame {
         gbc.gridwidth = 2;
         JLabel lblNotaContrasena = new JLabel("<html><i>Mínimo 8 caracteres. En edición, dejar vacío para no cambiar.</i></html>");
         lblNotaContrasena.setFont(new Font("Arial", Font.PLAIN, 10));
-        lblNotaContrasena.setForeground(Color.GRAY);
+        lblNotaContrasena.setForeground(TemaColors.TEXTO_SECUNDARIO);
         formulario.add(lblNotaContrasena, gbc);
         gbc.gridwidth = 1;
         fila++;

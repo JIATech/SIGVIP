@@ -77,6 +77,12 @@ public class EstablecimientoDAO {
      * @throws SQLException si ocurre un error
      */
     public Establecimiento buscarPorId(Long id) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().buscarEstablecimientoPorId(id);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT * FROM establecimientos WHERE id_establecimiento = ?";
 
         try (Connection conn = conexionBD.getConexion();
@@ -191,6 +197,17 @@ public class EstablecimientoDAO {
         }
 
         return establecimientos;
+    }
+
+    /**
+     * Obtiene todos los establecimientos (alias de obtenerTodos).
+     * Método de conveniencia para consistencia con otros DAOs.
+     *
+     * @return lista de todos los establecimientos
+     * @throws SQLException si ocurre un error
+     */
+    public List<Establecimiento> listarTodos() throws SQLException {
+        return obtenerTodos();
     }
 
     /**
