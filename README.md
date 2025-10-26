@@ -18,7 +18,7 @@ SIGVIP es un sistema de escritorio desarrollado en Java para la gestión integra
 - ✅ 8 entidades del modelo con lógica de negocio (incluye ReporteGenerado)
 - ✅ 11 enums para estados y tipos
 - ✅ 8 DAOs completos con JDBC (incluye ReporteDAO)
-- ✅ 6 controladores MVC (Visitantes, Acceso, Reportes, Autorizaciones, Internos, Usuarios)
+- ✅ 7 controladores MVC (Visitantes, Acceso, Reportes, Autorizaciones, Internos, Usuarios, Restricciones)
 - ✅ Servicios de validación y utilidades
 - ✅ Base de datos MySQL completa (9 tablas)
 
@@ -31,6 +31,7 @@ SIGVIP es un sistema de escritorio desarrollado en Java para la gestión integra
 - ✅ **VistaGestionInternos** (RF006) - Completa con traslados y ubicaciones
 - ✅ **VistaReportes** (RF007) - Completa con reportes HTML y persistencia
 - ✅ **VistaGestionUsuarios** (RF008) - Completa con seguridad triple capa
+- ✅ **VistaGestionRestricciones** (RF009) - Completa con alertas automáticas y modo offline
 
 **Infraestructura**:
 - ✅ Configuración de base de datos
@@ -223,9 +224,9 @@ mysql -u root -p sigvip_db < database/datos_de_prueba.sql
    mysql -u root -p sigvip_db < database/datos_de_prueba.sql
    ```
 
-## 🔑 Funcionalidades Implementadas
+## Funcionalidades Implementadas
 
-### ⭐ RF003/RF004: Control de Acceso
+### RF003/RF004: Control de Acceso
 
 **Menú**: `Control de Acceso → Control de Ingreso/Egreso`
 
@@ -342,6 +343,32 @@ Validación automática de 6 pasos críticos:
 4. Asignar rol y establecimiento
 5. Guardar usuario (contraseña se hashea automáticamente)
 
+### ✅ RF009: Registrar Restricciones
+
+**Menú**: `Administración → Gestión de Restricciones` (ADMINISTRADOR y SUPERVISOR)
+
+- Crear restricciones de acceso con alcance TODOS o INTERNO_ESPECIFICO
+- Tipos de restricción: CONDUCTA, JUDICIAL, ADMINISTRATIVA, SEGURIDAD
+- Motivo obligatorio (mínimo 10 caracteres)
+- Fecha de inicio obligatoria
+- Fecha de fin opcional (NULL = indefinida)
+- Búsqueda de visitante por DNI
+- Búsqueda de interno por legajo (solo para restricciones específicas)
+- Acciones: Levantar restricción, Extender fecha, Eliminar (solo ADMINISTRADOR)
+- Filtros: por estado (Todas/Activas/Inactivas/Próximas a vencer) y tipo
+- Alertas automáticas: widget en header y notificación al login para restricciones que vencen en 7 días
+- Integración con RF003: bloqueo automático de ingreso si hay restricciones activas
+- Soporte completo de modo offline
+
+**Cómo probar**:
+1. Iniciar sesión como `admin` o `supervisor1`
+2. Ir a "Administración → Gestión de Restricciones (RF009)"
+3. Buscar visitante por DNI: `33333333`
+4. Seleccionar tipo de restricción y alcance
+5. Ingresar motivo y fechas
+6. Crear restricción
+7. Intentar registrar ingreso en Control de Acceso (debe bloquearse)
+
 ### ⚙️ Otras Funcionalidades
 
 - ✅ Login con autenticación SHA-256
@@ -377,8 +404,8 @@ SIGVIP/
 ├── src/com/sigvip/
 │   ├── Main.java                      # Punto de entrada
 │   ├── modelo/                        # 8 entidades + 11 enums
-│   ├── vista/                         # 8 vistas Swing
-│   ├── controlador/                   # 6 controladores MVC
+│   ├── vista/                         # 9 vistas Swing
+│   ├── controlador/                   # 7 controladores MVC
 │   ├── persistencia/                  # 8 DAOs + ConexionBD
 │   └── utilidades/                    # Validadores + servicios
 ├── resources/
@@ -391,20 +418,6 @@ SIGVIP/
 │   └── consultas_sql_prueba.sql       # Queries de referencia
 └── README.md                          # Este archivo
 ```
-
-## 🚀 Extensiones Opcionales
-
-Posibles mejoras para versiones futuras:
-
-- Testing automatizado con JUnit
-- Optimizaciones de rendimiento y paginación
-- RF009: Gestión de Restricciones
-- RF010: Validación de Disponibilidad de Internos
-
-## 📞 Soporte
-
-Para consultas sobre el proyecto académico:
-- Repositorio: https://github.com/JIATech/sigvip.git
 
 ## 📄 Licencia
 

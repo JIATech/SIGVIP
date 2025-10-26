@@ -34,6 +34,12 @@ public class RestriccionDAO {
      * @throws SQLException si ocurre un error
      */
     public Long insertar(Restriccion restriccion) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().insertarRestriccion(restriccion);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "INSERT INTO restricciones (id_visitante, tipo_restriccion, motivo, " +
                     "fecha_inicio, fecha_fin, aplicable_a, id_interno, activa, id_creado_por) " +
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -83,6 +89,12 @@ public class RestriccionDAO {
      * @throws SQLException si ocurre un error
      */
     public Restriccion buscarPorId(Long id) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().buscarRestriccionPorId(id);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT * FROM restricciones WHERE id_restriccion = ?";
 
         try (Connection conn = conexionBD.getConexion();
@@ -107,6 +119,12 @@ public class RestriccionDAO {
      * @throws SQLException si ocurre un error
      */
     public boolean actualizar(Restriccion restriccion) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().actualizarRestriccion(restriccion);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "UPDATE restricciones SET id_visitante = ?, tipo_restriccion = ?, " +
                     "motivo = ?, fecha_inicio = ?, fecha_fin = ?, aplicable_a = ?, " +
                     "id_interno = ?, activa = ?, id_creado_por = ? WHERE id_restriccion = ?";
@@ -144,6 +162,12 @@ public class RestriccionDAO {
      * @throws SQLException si ocurre un error
      */
     public boolean eliminar(Long id) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().eliminarRestriccion(id);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "DELETE FROM restricciones WHERE id_restriccion = ?";
 
         try (Connection conn = conexionBD.getConexion();
@@ -162,6 +186,12 @@ public class RestriccionDAO {
      * @throws SQLException si ocurre un error
      */
     public List<Restriccion> obtenerTodas() throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().listarRestricciones();
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT * FROM restricciones ORDER BY fecha_inicio DESC";
         List<Restriccion> restricciones = new ArrayList<>();
 
@@ -185,6 +215,12 @@ public class RestriccionDAO {
      * @throws SQLException si ocurre un error
      */
     public List<Restriccion> obtenerActivas() throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().listarRestriccionesActivas();
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT * FROM restricciones WHERE activa = true " +
                     "AND (fecha_fin IS NULL OR fecha_fin >= CURDATE()) " +
                     "ORDER BY fecha_inicio DESC";
@@ -210,6 +246,12 @@ public class RestriccionDAO {
      * @throws SQLException si ocurre un error
      */
     public List<Restriccion> obtenerActivasPorVisitante(Long idVisitante) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().listarRestriccionesActivas(idVisitante);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT * FROM restricciones WHERE id_visitante = ? AND activa = true " +
                     "AND fecha_inicio <= CURDATE() " +
                     "AND (fecha_fin IS NULL OR fecha_fin >= CURDATE()) " +
@@ -278,6 +320,12 @@ public class RestriccionDAO {
      * @throws SQLException si ocurre un error
      */
     public List<Restriccion> buscarPorVisitante(Long idVisitante) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().buscarRestriccionesPorVisitante(idVisitante);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT * FROM restricciones WHERE id_visitante = ? " +
                     "ORDER BY fecha_inicio DESC";
         List<Restriccion> restricciones = new ArrayList<>();
@@ -305,6 +353,12 @@ public class RestriccionDAO {
      * @throws SQLException si ocurre un error
      */
     public List<Restriccion> buscarPorTipo(TipoRestriccion tipo) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().buscarRestriccionesPorTipo(tipo);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT * FROM restricciones WHERE tipo_restriccion = ? " +
                     "ORDER BY fecha_inicio DESC";
         List<Restriccion> restricciones = new ArrayList<>();
@@ -335,6 +389,12 @@ public class RestriccionDAO {
      */
     public List<Restriccion> obtenerProximasAVencer(java.util.Date fechaInicio,
                                                     java.util.Date fechaFin) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().obtenerRestriccionesProximasAVencer(fechaInicio, fechaFin);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT * FROM restricciones WHERE activa = true " +
                     "AND fecha_fin BETWEEN ? AND ? ORDER BY fecha_fin ASC";
         List<Restriccion> restricciones = new ArrayList<>();
@@ -362,6 +422,12 @@ public class RestriccionDAO {
      * @throws SQLException si ocurre un error
      */
     public int contarActivas() throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().contarRestriccionesActivas();
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT COUNT(*) FROM restricciones WHERE activa = true " +
                     "AND fecha_inicio <= CURDATE() " +
                     "AND (fecha_fin IS NULL OR fecha_fin >= CURDATE())";

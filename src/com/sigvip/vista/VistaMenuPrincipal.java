@@ -1,5 +1,6 @@
 package com.sigvip.vista;
 
+import com.sigvip.controlador.ControladorRestricciones;
 import com.sigvip.modelo.Usuario;
 import com.sigvip.modelo.enums.Rol;
 import com.sigvip.persistencia.GestorModo;
@@ -7,6 +8,9 @@ import com.sigvip.utilidades.TemaColors;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.sql.SQLException;
 
 /**
  * Ventana principal del sistema SIGVIP.
@@ -38,6 +42,12 @@ public class VistaMenuPrincipal extends JFrame {
         inicializarComponentes();
         configurarVentana();
         mostrarBienvenida();
+
+        // Verificar alertas de restricciones al inicio (solo ADMIN y SUPERVISOR)
+        if (usuarioActual.getRol() == Rol.ADMINISTRADOR ||
+            usuarioActual.getRol() == Rol.SUPERVISOR) {
+            SwingUtilities.invokeLater(() -> verificarAlertasRestricciones());
+        }
     }
 
     /**
@@ -205,7 +215,80 @@ public class VistaMenuPrincipal extends JFrame {
 
         panel.add(panelTitulos, BorderLayout.WEST);
 
+        // Panel de alertas (solo para ADMIN y SUPERVISOR)
+        if (usuarioActual.getRol() == Rol.ADMINISTRADOR ||
+            usuarioActual.getRol() == Rol.SUPERVISOR) {
+            JPanel panelAlertas = crearPanelAlertas();
+            panel.add(panelAlertas, BorderLayout.EAST);
+        }
+
         return panel;
+    }
+
+    /**
+     * Crea el panel de alertas de restricciones próximas a vencer.
+     */
+    private JPanel crearPanelAlertas() {
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        panel.setOpaque(false);
+
+        try {
+            ControladorRestricciones controlador = new ControladorRestricciones(usuarioActual);
+            int proximasVencer = controlador.obtenerProximasAVencer(7).size();
+
+            if (proximasVencer > 0) {
+                JLabel lblAlerta = new JLabel("ALERTA: " + proximasVencer + " restricciones vencen en 7 dias");
+                lblAlerta.setForeground(Color.WHITE);
+                lblAlerta.setFont(new Font("Arial", Font.BOLD, 12));
+                lblAlerta.setCursor(new Cursor(Cursor.HAND_CURSOR));
+                lblAlerta.setToolTipText("Click para ver restricciones proximas a vencer");
+                lblAlerta.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(Color.WHITE),
+                    BorderFactory.createEmptyBorder(5, 10, 5, 10)
+                ));
+
+                lblAlerta.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+                        gestionarRestricciones();
+                    }
+                });
+
+                panel.add(lblAlerta);
+            }
+        } catch (SQLException ex) {
+            // Error silencioso - no bloquear el inicio de sesión por error en alertas
+            System.err.println("Error al obtener alertas de restricciones: " + ex.getMessage());
+        }
+
+        return panel;
+    }
+
+    /**
+     * Verifica y muestra alertas de restricciones próximas a vencer al inicio de sesión.
+     */
+    private void verificarAlertasRestricciones() {
+        try {
+            ControladorRestricciones controlador = new ControladorRestricciones(usuarioActual);
+            int proximasVencer = controlador.obtenerProximasAVencer(7).size();
+
+            if (proximasVencer > 0) {
+                int respuesta = JOptionPane.showConfirmDialog(this,
+                    "ALERTA DE RESTRICCIONES\n\n" +
+                    "Hay " + proximasVencer + " restricciones proximas a vencer en los proximos 7 dias.\n\n" +
+                    "Desea revisar las restricciones ahora?",
+                    "Alerta de Restricciones",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE);
+
+                if (respuesta == JOptionPane.YES_OPTION) {
+                    gestionarRestricciones();
+                }
+            }
+        } catch (SQLException ex) {
+            // Error silencioso - no bloquear el inicio de sesión
+            System.err.println("Error al verificar alertas de restricciones: " + ex.getMessage());
+        }
     }
 
     /**
@@ -446,7 +529,8 @@ public class VistaMenuPrincipal extends JFrame {
     }
 
     private void gestionarRestricciones() {
-        JOptionPane.showMessageDialog(this, "Funcionalidad en desarrollo");
+        VistaGestionRestricciones vista = new VistaGestionRestricciones(usuarioActual);
+        vista.setVisible(true);
     }
 
     private void mostrarAcercaDe() {

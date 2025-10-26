@@ -706,6 +706,90 @@ public class RepositorioMemoria {
         return restricciones.remove(id) != null;
     }
 
+    /**
+     * Lista todas las restricciones activas (sin filtro por visitante).
+     * Método para obtenerActivas() del DAO.
+     *
+     * @return lista de restricciones activas
+     */
+    public List<Restriccion> listarRestriccionesActivas() {
+        Date hoy = new Date();
+        return restricciones.values().stream()
+                .filter(r -> r.isActiva())
+                .filter(r -> r.getFechaInicio() != null && !r.getFechaInicio().after(hoy))
+                .filter(r -> r.getFechaFin() == null || !r.getFechaFin().before(hoy))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Busca todas las restricciones de un visitante (activas e inactivas).
+     * Método para buscarPorVisitante() del DAO.
+     *
+     * @param idVisitante ID del visitante
+     * @return lista de restricciones
+     */
+    public List<Restriccion> buscarRestriccionesPorVisitante(Long idVisitante) {
+        return restricciones.values().stream()
+                .filter(r -> r.getVisitante() != null && r.getVisitante().getIdVisitante().equals(idVisitante))
+                .sorted((r1, r2) -> {
+                    if (r1.getFechaInicio() == null) return 1;
+                    if (r2.getFechaInicio() == null) return -1;
+                    return r2.getFechaInicio().compareTo(r1.getFechaInicio());
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Busca restricciones por tipo.
+     * Método para buscarPorTipo() del DAO.
+     *
+     * @param tipo tipo de restricción
+     * @return lista de restricciones de ese tipo
+     */
+    public List<Restriccion> buscarRestriccionesPorTipo(TipoRestriccion tipo) {
+        return restricciones.values().stream()
+                .filter(r -> r.getTipoRestriccion() == tipo)
+                .sorted((r1, r2) -> {
+                    if (r1.getFechaInicio() == null) return 1;
+                    if (r2.getFechaInicio() == null) return -1;
+                    return r2.getFechaInicio().compareTo(r1.getFechaInicio());
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Obtiene restricciones que vencen en un rango de fechas.
+     * Método para obtenerProximasAVencer() del DAO.
+     *
+     * @param fechaInicio fecha de inicio del rango
+     * @param fechaFin fecha de fin del rango
+     * @return lista de restricciones próximas a vencer
+     */
+    public List<Restriccion> obtenerRestriccionesProximasAVencer(java.util.Date fechaInicio,
+                                                                  java.util.Date fechaFin) {
+        return restricciones.values().stream()
+                .filter(r -> r.isActiva())
+                .filter(r -> r.getFechaFin() != null)
+                .filter(r -> !r.getFechaFin().before(fechaInicio) && !r.getFechaFin().after(fechaFin))
+                .sorted((r1, r2) -> r1.getFechaFin().compareTo(r2.getFechaFin()))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Cuenta restricciones activas.
+     * Método para contarActivas() del DAO.
+     *
+     * @return número de restricciones activas
+     */
+    public int contarRestriccionesActivas() {
+        Date hoy = new Date();
+        return (int) restricciones.values().stream()
+                .filter(r -> r.isActiva())
+                .filter(r -> r.getFechaInicio() != null && !r.getFechaInicio().after(hoy))
+                .filter(r -> r.getFechaFin() == null || !r.getFechaFin().before(hoy))
+                .count();
+    }
+
     // ===== MÉTODOS CRUD PARA ESTABLECIMIENTOS =====
 
     public Long insertarEstablecimiento(Establecimiento e) {
