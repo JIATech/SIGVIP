@@ -163,7 +163,7 @@ public class ControladorRestricciones {
         restriccion.setFechaFin(fechaFin);
         restriccion.setAplicableA(alcance);
         restriccion.setInterno(interno);
-        restriccion.setActiva(true);
+        restriccion.setActivo(true);
         restriccion.setCreadoPor(usuarioActual);
 
         // Persistir
@@ -237,7 +237,7 @@ public class ControladorRestricciones {
             throw new IllegalArgumentException("La restricción especificada no existe");
         }
 
-        if (!restriccion.isActiva()) {
+        if (!restriccion.isActivo()) {
             throw new IllegalArgumentException("Solo se pueden extender restricciones activas");
         }
 
@@ -280,7 +280,7 @@ public class ControladorRestricciones {
      * @throws SQLException si ocurre error en BD
      */
     public List<Restriccion> listarTodasRestricciones() throws SQLException {
-        return restriccionDAO.obtenerTodas();
+        return restriccionDAO.listarTodos();
     }
 
     /**

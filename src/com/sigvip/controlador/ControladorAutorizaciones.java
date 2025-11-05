@@ -168,7 +168,7 @@ public class ControladorAutorizaciones {
      * @throws SQLException si ocurre error en BD
      */
     public List<Autorizacion> listarTodasAutorizaciones() throws SQLException {
-        return autorizacionDAO.obtenerTodas();
+        return autorizacionDAO.listarTodos();
     }
 
     /**

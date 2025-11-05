@@ -365,7 +365,7 @@ public class ControladorUsuarios {
      * @throws SQLException si ocurre error en BD
      */
     public List<Usuario> listarTodos() throws SQLException {
-        return usuarioDAO.obtenerTodos();
+        return usuarioDAO.listarTodos();
     }
 
     /**

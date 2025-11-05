@@ -144,7 +144,7 @@ public class ControladorReportes {
      * @throws SQLException si ocurre error en base de datos
      */
     public List<ReporteGenerado> obtenerHistorialReportes() throws SQLException {
-        return reporteDAO.obtenerTodos();
+        return reporteDAO.listarTodos();
     }
 
     /**
@@ -246,7 +246,7 @@ public class ControladorReportes {
      * @throws SQLException si ocurre error en base de datos
      */
     public List<Visitante> obtenerVisitantesDisponibles() throws SQLException {
-        return visitanteDAO.obtenerTodos();
+        return visitanteDAO.listarTodos();
     }
 
     /**
@@ -256,7 +256,7 @@ public class ControladorReportes {
      * @throws SQLException si ocurre error en base de datos
      */
     public List<Interno> obtenerInternosDisponibles() throws SQLException {
-        return internoDAO.obtenerTodos();
+        return internoDAO.listarTodos();
     }
 
     /**

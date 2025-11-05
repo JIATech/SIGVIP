@@ -253,7 +253,7 @@ public class ControladorVisitantes {
      */
     public List<Visitante> obtenerTodos() {
         try {
-            return visitanteDAO.obtenerTodos();
+            return visitanteDAO.listarTodos();
         } catch (SQLException e) {
             System.err.println("Error al obtener visitantes: " + e.getMessage());
             return List.of();
