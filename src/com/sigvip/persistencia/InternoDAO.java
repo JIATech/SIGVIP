@@ -14,13 +14,16 @@ import java.util.stream.Collectors;
  * DAO para operaciones CRUD de la entidad Interno.
  * Implementa el acceso a la tabla 'internos' de la base de datos.
  *
+ * <p><b>TP4 - Implementa Interfaz IBaseDAO&lt;Interno&gt;:</b></p>
+ * Demuestra el uso de interfaces y polimorfismo en Java.
+ *
  * <p>Modo Offline: Si no hay conexión a MySQL, usa RepositorioMemoria (datos en RAM).
  * Modo Online: Funcionamiento normal con JDBC y MySQL.
  *
  * Especificación: PDF Sección 11.2.3 - Capa de Persistencia
  * Seguridad: Todas las consultas usan PreparedStatement
  */
-public class InternoDAO {
+public class InternoDAO implements IBaseDAO<Interno> {
 
     private ConexionBD conexionBD;
 
@@ -35,6 +38,7 @@ public class InternoDAO {
      * @return ID generado
      * @throws SQLException si ocurre un error
      */
+@Override
     public Long insertar(Interno interno) throws SQLException {
         // MODO OFFLINE: Usar repositorio en memoria
         if (GestorModo.getInstancia().isModoOffline()) {
@@ -90,6 +94,7 @@ public class InternoDAO {
      * @return interno encontrado o null
      * @throws SQLException si ocurre un error
      */
+@Override
     public Interno buscarPorId(Long id) throws SQLException {
         // MODO OFFLINE: Usar repositorio en memoria
         if (GestorModo.getInstancia().isModoOffline()) {
@@ -175,6 +180,7 @@ public class InternoDAO {
      * @return true si se actualizó correctamente
      * @throws SQLException si ocurre un error
      */
+@Override
     public boolean actualizar(Interno interno) throws SQLException {
         String sql = "UPDATE internos SET numero_legajo = ?, apellido = ?, nombre = ?, " +
                     "dni = ?, id_establecimiento = ?, pabellon_actual = ?, piso_actual = ?, " +
@@ -212,6 +218,7 @@ public class InternoDAO {
      * @return true si se eliminó correctamente
      * @throws SQLException si ocurre un error
      */
+@Override
     public boolean eliminar(Long id) throws SQLException {
         String sql = "DELETE FROM internos WHERE id_interno = ?";
 
@@ -259,6 +266,7 @@ public class InternoDAO {
      * @return lista de todos los internos
      * @throws SQLException si ocurre un error
      */
+@Override
     public List<Interno> listarTodos() throws SQLException {
         return obtenerTodos();
     }

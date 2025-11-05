@@ -671,7 +671,7 @@ public class RepositorioMemoria {
 
         return restricciones.values().stream()
                 .filter(r -> r.getVisitante() != null && r.getVisitante().getIdVisitante().equals(idVisitante))
-                .filter(r -> r.isActiva())
+                .filter(r -> r.isActivo())
                 .filter(r -> r.getFechaInicio() != null && !r.getFechaInicio().after(hoy))
                 .filter(r -> r.getFechaFin() == null || !r.getFechaFin().before(hoy))
                 .filter(r -> r.getAplicableA() == com.sigvip.modelo.enums.AplicableA.TODOS ||
@@ -687,7 +687,7 @@ public class RepositorioMemoria {
     public List<Restriccion> listarRestriccionesActivas(Long idVisitante) {
         Date hoy = new Date();
         return restricciones.values().stream()
-                .filter(r -> r.isActiva())
+                .filter(r -> r.isActivo())
                 .filter(r -> r.getFechaInicio().before(hoy) || r.getFechaInicio().equals(hoy))
                 .filter(r -> r.getFechaFin() == null || r.getFechaFin().after(hoy))
                 .filter(r -> r.getVisitante() == null || r.getVisitante().getIdVisitante().equals(idVisitante))
@@ -715,7 +715,7 @@ public class RepositorioMemoria {
     public List<Restriccion> listarRestriccionesActivas() {
         Date hoy = new Date();
         return restricciones.values().stream()
-                .filter(r -> r.isActiva())
+                .filter(r -> r.isActivo())
                 .filter(r -> r.getFechaInicio() != null && !r.getFechaInicio().after(hoy))
                 .filter(r -> r.getFechaFin() == null || !r.getFechaFin().before(hoy))
                 .collect(Collectors.toList());
@@ -768,7 +768,7 @@ public class RepositorioMemoria {
     public List<Restriccion> obtenerRestriccionesProximasAVencer(java.util.Date fechaInicio,
                                                                   java.util.Date fechaFin) {
         return restricciones.values().stream()
-                .filter(r -> r.isActiva())
+                .filter(r -> r.isActivo())
                 .filter(r -> r.getFechaFin() != null)
                 .filter(r -> !r.getFechaFin().before(fechaInicio) && !r.getFechaFin().after(fechaFin))
                 .sorted((r1, r2) -> r1.getFechaFin().compareTo(r2.getFechaFin()))
@@ -784,7 +784,7 @@ public class RepositorioMemoria {
     public int contarRestriccionesActivas() {
         Date hoy = new Date();
         return (int) restricciones.values().stream()
-                .filter(r -> r.isActiva())
+                .filter(r -> r.isActivo())
                 .filter(r -> r.getFechaInicio() != null && !r.getFechaInicio().after(hoy))
                 .filter(r -> r.getFechaFin() == null || !r.getFechaFin().before(hoy))
                 .count();

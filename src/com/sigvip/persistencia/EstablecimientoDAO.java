@@ -14,7 +14,7 @@ import java.util.List;
  * Especificación: PDF Sección 11.2.3 - Capa de Persistencia
  * Responsabilidad: Configuración de establecimientos penitenciarios
  */
-public class EstablecimientoDAO {
+public class EstablecimientoDAO implements IBaseDAO<Establecimiento> {
 
     private ConexionBD conexionBD;
 
@@ -29,6 +29,7 @@ public class EstablecimientoDAO {
      * @return ID generado
      * @throws SQLException si ocurre un error
      */
+@Override
     public Long insertar(Establecimiento establecimiento) throws SQLException {
         String sql = "INSERT INTO establecimientos (nombre, direccion, telefono, " +
                     "modalidad_visita, dias_habilita, horario_inicio, horario_fin, " +
@@ -76,6 +77,7 @@ public class EstablecimientoDAO {
      * @return establecimiento encontrado o null
      * @throws SQLException si ocurre un error
      */
+@Override
     public Establecimiento buscarPorId(Long id) throws SQLException {
         // MODO OFFLINE: Usar repositorio en memoria
         if (GestorModo.getInstancia().isModoOffline()) {
@@ -130,6 +132,7 @@ public class EstablecimientoDAO {
      * @return true si se actualizó correctamente
      * @throws SQLException si ocurre un error
      */
+@Override
     public boolean actualizar(Establecimiento establecimiento) throws SQLException {
         String sql = "UPDATE establecimientos SET nombre = ?, direccion = ?, telefono = ?, " +
                     "modalidad_visita = ?, dias_habilita = ?, horario_inicio = ?, " +
@@ -165,6 +168,7 @@ public class EstablecimientoDAO {
      * @return true si se eliminó correctamente
      * @throws SQLException si ocurre un error
      */
+@Override
     public boolean eliminar(Long id) throws SQLException {
         String sql = "DELETE FROM establecimientos WHERE id_establecimiento = ?";
 
@@ -183,7 +187,7 @@ public class EstablecimientoDAO {
      * @return lista de todos los establecimientos
      * @throws SQLException si ocurre un error
      */
-    public List<Establecimiento> obtenerTodos() throws SQLException {
+    public List<Establecimiento> listarTodos() throws SQLException {
         String sql = "SELECT * FROM establecimientos ORDER BY nombre";
         List<Establecimiento> establecimientos = new ArrayList<>();
 
@@ -200,16 +204,6 @@ public class EstablecimientoDAO {
     }
 
     /**
-     * Obtiene todos los establecimientos (alias de obtenerTodos).
-     * Método de conveniencia para consistencia con otros DAOs.
-     *
-     * @return lista de todos los establecimientos
-     * @throws SQLException si ocurre un error
-     */
-    public List<Establecimiento> listarTodos() throws SQLException {
-        return obtenerTodos();
-    }
-
     /**
      * Obtiene establecimientos activos.
      *

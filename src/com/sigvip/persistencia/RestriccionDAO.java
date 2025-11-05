@@ -18,7 +18,7 @@ import java.util.List;
  * Especificación: PDF Sección 11.2.3 - Capa de Persistencia
  * Crítico para: RF003 (Control de Ingreso) - validación de restricciones
  */
-public class RestriccionDAO {
+public class RestriccionDAO implements IBaseDAO<Restriccion> {
 
     private ConexionBD conexionBD;
 
@@ -33,6 +33,7 @@ public class RestriccionDAO {
      * @return ID generado
      * @throws SQLException si ocurre un error
      */
+@Override
     public Long insertar(Restriccion restriccion) throws SQLException {
         // MODO OFFLINE: Usar repositorio en memoria
         if (GestorModo.getInstancia().isModoOffline()) {
@@ -59,7 +60,7 @@ public class RestriccionDAO {
                             restriccion.getAplicableA().name() : null);
             stmt.setObject(7, restriccion.getInterno() != null ?
                             restriccion.getInterno().getIdInterno() : null);
-            stmt.setBoolean(8, restriccion.isActiva());
+            stmt.setBoolean(8, restriccion.isActivo());
             stmt.setObject(9, restriccion.getCreadoPor() != null ?
                             restriccion.getCreadoPor().getIdUsuario() : null);
 
@@ -88,6 +89,7 @@ public class RestriccionDAO {
      * @return restricción encontrada o null
      * @throws SQLException si ocurre un error
      */
+@Override
     public Restriccion buscarPorId(Long id) throws SQLException {
         // MODO OFFLINE: Usar repositorio en memoria
         if (GestorModo.getInstancia().isModoOffline()) {
@@ -118,6 +120,7 @@ public class RestriccionDAO {
      * @return true si se actualizó correctamente
      * @throws SQLException si ocurre un error
      */
+@Override
     public boolean actualizar(Restriccion restriccion) throws SQLException {
         // MODO OFFLINE: Usar repositorio en memoria
         if (GestorModo.getInstancia().isModoOffline()) {
@@ -144,7 +147,7 @@ public class RestriccionDAO {
                             restriccion.getAplicableA().name() : null);
             stmt.setObject(7, restriccion.getInterno() != null ?
                             restriccion.getInterno().getIdInterno() : null);
-            stmt.setBoolean(8, restriccion.isActiva());
+            stmt.setBoolean(8, restriccion.isActivo());
             stmt.setObject(9, restriccion.getCreadoPor() != null ?
                             restriccion.getCreadoPor().getIdUsuario() : null);
             stmt.setLong(10, restriccion.getIdRestriccion());
@@ -161,6 +164,7 @@ public class RestriccionDAO {
      * @return true si se eliminó correctamente
      * @throws SQLException si ocurre un error
      */
+@Override
     public boolean eliminar(Long id) throws SQLException {
         // MODO OFFLINE: Usar repositorio en memoria
         if (GestorModo.getInstancia().isModoOffline()) {
@@ -185,7 +189,7 @@ public class RestriccionDAO {
      * @return lista de todas las restricciones
      * @throws SQLException si ocurre un error
      */
-    public List<Restriccion> obtenerTodas() throws SQLException {
+    public List<Restriccion> listarTodos() throws SQLException {
         // MODO OFFLINE: Usar repositorio en memoria
         if (GestorModo.getInstancia().isModoOffline()) {
             return RepositorioMemoria.getInstancia().listarRestricciones();
@@ -490,7 +494,7 @@ public class RestriccionDAO {
             restriccion.setInterno(interno);
         }
 
-        restriccion.setActiva(rs.getBoolean("activa"));
+        restriccion.setActivo(rs.getBoolean("activa"));
 
         // Usuario que creó la restricción
         Long idCreadoPor = rs.getLong("id_creado_por");

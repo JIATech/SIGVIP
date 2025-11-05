@@ -17,7 +17,7 @@ import java.util.List;
  * Especificación: PDF Sección 11.2.3 - Capa de Persistencia
  * Crítico para: RF003 (Control de Ingreso), RF004 (Control de Egreso)
  */
-public class VisitaDAO {
+public class VisitaDAO implements IBaseDAO<Visita> {
 
     private ConexionBD conexionBD;
 
@@ -32,6 +32,7 @@ public class VisitaDAO {
      * @return ID generado
      * @throws SQLException si ocurre un error
      */
+    @Override
     public Long insertar(Visita visita) throws SQLException {
         // MODO OFFLINE: Usar repositorio en memoria (CRÍTICO RF003/RF004)
         if (GestorModo.getInstancia().isModoOffline()) {
@@ -88,6 +89,7 @@ public class VisitaDAO {
      * @return visita encontrada o null
      * @throws SQLException si ocurre un error
      */
+@Override
     public Visita buscarPorId(Long id) throws SQLException {
         // MODO OFFLINE: Usar repositorio en memoria
         if (GestorModo.getInstancia().isModoOffline()) {
@@ -118,6 +120,7 @@ public class VisitaDAO {
      * @return true si se actualizó correctamente
      * @throws SQLException si ocurre un error
      */
+@Override
     public boolean actualizar(Visita visita) throws SQLException {
         // MODO OFFLINE: Usar repositorio en memoria (CRÍTICO RF003/RF004)
         if (GestorModo.getInstancia().isModoOffline()) {
@@ -162,6 +165,7 @@ public class VisitaDAO {
      * @return true si se eliminó correctamente
      * @throws SQLException si ocurre un error
      */
+@Override
     public boolean eliminar(Long id) throws SQLException {
         String sql = "DELETE FROM visitas WHERE id_visita = ?";
 
@@ -180,7 +184,8 @@ public class VisitaDAO {
      * @return lista de todas las visitas
      * @throws SQLException si ocurre un error
      */
-    public List<Visita> obtenerTodas() throws SQLException {
+    @Override
+    public List<Visita> listarTodos() throws SQLException {
         String sql = "SELECT * FROM visitas ORDER BY fecha_visita DESC, hora_ingreso DESC";
         List<Visita> visitas = new ArrayList<>();
 

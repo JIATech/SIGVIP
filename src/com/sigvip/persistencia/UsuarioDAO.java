@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
  * Especificación: PDF Sección 11.2.3 - Capa de Persistencia
  * Crítico para: RF001 (Autenticación), control de acceso por roles
  */
-public class UsuarioDAO {
+public class UsuarioDAO implements IBaseDAO<Usuario> {
 
     private ConexionBD conexionBD;
 
@@ -36,6 +36,7 @@ public class UsuarioDAO {
      * @return ID generado
      * @throws SQLException si ocurre un error
      */
+@Override
     public Long insertar(Usuario usuario) throws SQLException {
         // MODO OFFLINE: Usar repositorio en memoria
         if (GestorModo.getInstancia().isModoOffline()) {
@@ -87,6 +88,7 @@ public class UsuarioDAO {
      * @return usuario encontrado o null
      * @throws SQLException si ocurre un error
      */
+@Override
     public Usuario buscarPorId(Long id) throws SQLException {
         // MODO OFFLINE: Usar repositorio en memoria
         if (GestorModo.getInstancia().isModoOffline()) {
@@ -149,6 +151,7 @@ public class UsuarioDAO {
      * @return true si se actualizó correctamente
      * @throws SQLException si ocurre un error
      */
+@Override
     public boolean actualizar(Usuario usuario) throws SQLException {
         // MODO OFFLINE: Usar repositorio en memoria
         if (GestorModo.getInstancia().isModoOffline()) {
@@ -220,6 +223,7 @@ public class UsuarioDAO {
      * @return true si se eliminó correctamente
      * @throws SQLException si ocurre un error
      */
+@Override
     public boolean eliminar(Long id) throws SQLException {
         // MODO OFFLINE: Usar repositorio en memoria
         if (GestorModo.getInstancia().isModoOffline()) {
@@ -244,7 +248,7 @@ public class UsuarioDAO {
      * @return lista de todos los usuarios
      * @throws SQLException si ocurre un error
      */
-    public List<Usuario> obtenerTodos() throws SQLException {
+    public List<Usuario> listarTodos() throws SQLException {
         // MODO OFFLINE: Usar repositorio en memoria
         if (GestorModo.getInstancia().isModoOffline()) {
             return RepositorioMemoria.getInstancia().listarUsuarios();

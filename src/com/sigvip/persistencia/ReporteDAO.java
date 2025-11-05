@@ -15,7 +15,7 @@ import java.util.List;
  * Especificación: RF007 - Generar Reportes (persistencia)
  * Seguridad: Todas las consultas usan PreparedStatement
  */
-public class ReporteDAO {
+public class ReporteDAO implements IBaseDAO<ReporteGenerado> {
 
     private ConexionBD conexionBD;
 
@@ -33,6 +33,7 @@ public class ReporteDAO {
      * @return ID generado para el reporte
      * @throws SQLException si ocurre un error en la inserción
      */
+@Override
     public Long insertar(ReporteGenerado reporte) throws SQLException {
         String sql = "INSERT INTO reportes_generados (tipo_reporte, titulo, parametros_filtro, " +
                     "contenido, total_registros, id_generado_por) " +
@@ -74,6 +75,7 @@ public class ReporteDAO {
      * @return reporte encontrado o null si no existe
      * @throws SQLException si ocurre un error en la consulta
      */
+@Override
     public ReporteGenerado buscarPorId(Long id) throws SQLException {
         String sql = "SELECT r.*, u.nombre_completo as nombre_generador " +
                     "FROM reportes_generados r " +
@@ -95,12 +97,65 @@ public class ReporteDAO {
     }
 
     /**
+     * Actualiza un reporte existente.
+     * NOTA: Los reportes normalmente no se modifican después de generarse,
+     * pero se implementa para cumplir con la interfaz IBaseDAO.
+     *
+     * @param reporte reporte con datos actualizados
+     * @return true si se actualizó correctamente
+     * @throws SQLException si ocurre un error
+     */
+    @Override
+    public boolean actualizar(ReporteGenerado reporte) throws SQLException {
+        String sql = "UPDATE reportes_generados SET tipo_reporte = ?, titulo = ?, " +
+                    "parametros_filtro = ?, contenido = ?, total_registros = ?, " +
+                    "id_generado_por = ? WHERE id_reporte = ?";
+
+        try (Connection conn = conexionBD.getConexion();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, reporte.getTipoReporte().name());
+            stmt.setString(2, reporte.getTitulo());
+            stmt.setString(3, reporte.getParametrosFiltro());
+            stmt.setString(4, reporte.getContenido());
+            stmt.setInt(5, reporte.getTotalRegistros());
+            stmt.setLong(6, reporte.getIdGeneradoPor());
+            stmt.setLong(7, reporte.getIdReporte());
+
+            int filasAfectadas = stmt.executeUpdate();
+            return filasAfectadas > 0;
+        }
+    }
+
+    /**
+     * Elimina un reporte de la base de datos.
+     * Se puede usar para limpiar reportes antiguos o de prueba.
+     *
+     * @param id identificador del reporte
+     * @return true si se eliminó correctamente
+     * @throws SQLException si ocurre un error
+     */
+    @Override
+    public boolean eliminar(Long id) throws SQLException {
+        String sql = "DELETE FROM reportes_generados WHERE id_reporte = ?";
+
+        try (Connection conn = conexionBD.getConexion();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setLong(1, id);
+            int filasAfectadas = stmt.executeUpdate();
+            return filasAfectadas > 0;
+        }
+    }
+
+    /**
      * Obtiene todos los reportes generados, ordenados por fecha descendente.
      *
      * @return lista de todos los reportes
      * @throws SQLException si ocurre un error en la consulta
      */
-    public List<ReporteGenerado> obtenerTodos() throws SQLException {
+    @Override
+    public List<ReporteGenerado> listarTodos() throws SQLException {
         String sql = "SELECT r.*, u.nombre_completo as nombre_generador " +
                     "FROM reportes_generados r " +
                     "LEFT JOIN usuarios u ON r.id_generado_por = u.id_usuario " +

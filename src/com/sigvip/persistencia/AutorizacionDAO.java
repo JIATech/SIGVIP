@@ -21,7 +21,7 @@ import java.util.List;
  * Especificación: PDF Sección 11.2.3 - Capa de Persistencia
  * Crítico para: RF003 (Control de Ingreso) - validación de autorización
  */
-public class AutorizacionDAO {
+public class AutorizacionDAO implements IBaseDAO<Autorizacion> {
 
     private ConexionBD conexionBD;
 
@@ -36,6 +36,7 @@ public class AutorizacionDAO {
      * @return ID generado
      * @throws SQLException si ocurre un error
      */
+@Override
     public Long insertar(Autorizacion autorizacion) throws SQLException {
         // MODO OFFLINE: Usar repositorio en memoria
         if (GestorModo.getInstancia().isModoOffline()) {
@@ -91,6 +92,7 @@ public class AutorizacionDAO {
      * @return autorización encontrada o null
      * @throws SQLException si ocurre un error
      */
+@Override
     public Autorizacion buscarPorId(Long id) throws SQLException {
         // MODO OFFLINE: Usar repositorio en memoria
         if (GestorModo.getInstancia().isModoOffline()) {
@@ -156,6 +158,7 @@ public class AutorizacionDAO {
      * @return true si se actualizó correctamente
      * @throws SQLException si ocurre un error
      */
+@Override
     public boolean actualizar(Autorizacion autorizacion) throws SQLException {
         String sql = "UPDATE autorizaciones SET id_visitante = ?, id_interno = ?, " +
                     "tipo_relacion = ?, descripcion_relacion = ?, fecha_autorizacion = ?, " +
@@ -193,6 +196,7 @@ public class AutorizacionDAO {
      * @return true si se eliminó correctamente
      * @throws SQLException si ocurre un error
      */
+@Override
     public boolean eliminar(Long id) throws SQLException {
         String sql = "DELETE FROM autorizaciones WHERE id_autorizacion = ?";
 
@@ -211,7 +215,8 @@ public class AutorizacionDAO {
      * @return lista de todas las autorizaciones
      * @throws SQLException si ocurre un error
      */
-    public List<Autorizacion> obtenerTodas() throws SQLException {
+    @Override
+    public List<Autorizacion> listarTodos() throws SQLException {
         // MODO OFFLINE: Usar repositorio en memoria
         if (GestorModo.getInstancia().isModoOffline()) {
             return RepositorioMemoria.getInstancia().listarAutorizaciones();
