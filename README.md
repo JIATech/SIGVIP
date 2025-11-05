@@ -15,11 +15,13 @@ SIGVIP es un sistema de escritorio desarrollado en Java para la gestión integra
 ### ✅ Proyecto Completado (100% del MVP)
 
 **Backend (100%)**:
-- ✅ 8 entidades del modelo con lógica de negocio (incluye ReporteGenerado)
+- ✅ EntidadBase (clase abstracta base para todas las entidades - TP4)
+- ✅ 8 entidades del modelo con lógica de negocio (Visitante, Interno, Visita, Autorizacion, Usuario, Restriccion, Establecimiento, ReporteGenerado)
 - ✅ 11 enums para estados y tipos
-- ✅ 8 DAOs completos con JDBC (incluye ReporteDAO)
+- ✅ IBaseDAO<T> (interfaz genérica para todos los DAOs - TP4)
+- ✅ 8 DAOs completos con JDBC (VisitanteDAO, InternoDAO, VisitaDAO, AutorizacionDAO, RestriccionDAO, UsuarioDAO, EstablecimientoDAO, ReporteDAO)
 - ✅ 7 controladores MVC (Visitantes, Acceso, Reportes, Autorizaciones, Internos, Usuarios, Restricciones)
-- ✅ Servicios de validación y utilidades
+- ✅ Servicios de validación y utilidades (ValidadorDatos, ServicioValidacionSeguridad, GeneradorReportes, ServicioLogs, ServicioBackup)
 - ✅ Base de datos MySQL completa (9 tablas)
 
 **Frontend (100%)**:
@@ -402,20 +404,63 @@ Validación automática de 6 pasos críticos:
 ```
 SIGVIP/
 ├── src/com/sigvip/
-│   ├── Main.java                      # Punto de entrada
-│   ├── modelo/                        # 8 entidades + 11 enums
-│   ├── vista/                         # 9 vistas Swing
+│   ├── Main.java                      # Punto de entrada de la aplicación
+│   ├── modelo/
+│   │   ├── EntidadBase.java           # Clase abstracta base (TP4)
+│   │   ├── Visitante.java             # Entidad visitante
+│   │   ├── Interno.java               # Entidad interno
+│   │   ├── Visita.java                # Entidad visita
+│   │   ├── Autorizacion.java          # Entidad autorización
+│   │   ├── Usuario.java               # Entidad usuario
+│   │   ├── Restriccion.java           # Entidad restricción
+│   │   ├── Establecimiento.java       # Entidad establecimiento
+│   │   ├── ReporteGenerado.java       # Entidad reporte
+│   │   └── enums/                     # 11 enumeraciones de estados y tipos
+│   ├── vista/                         # 9 interfaces Swing
+│   │   ├── VistaLogin.java
+│   │   ├── VistaMenuPrincipal.java
+│   │   ├── VistaControlAcceso.java
+│   │   ├── VistaRegistroVisitante.java
+│   │   ├── VistaAutorizaciones.java
+│   │   ├── VistaGestionInternos.java
+│   │   ├── VistaReportes.java
+│   │   ├── VistaGestionUsuarios.java
+│   │   └── VistaGestionRestricciones.java
 │   ├── controlador/                   # 7 controladores MVC
-│   ├── persistencia/                  # 8 DAOs + ConexionBD
-│   └── utilidades/                    # Validadores + servicios
+│   │   ├── ControladorAcceso.java
+│   │   ├── ControladorVisitantes.java
+│   │   ├── ControladorAutorizaciones.java
+│   │   ├── ControladorInternos.java
+│   │   ├── ControladorReportes.java
+│   │   ├── ControladorUsuarios.java
+│   │   └── ControladorRestricciones.java
+│   ├── persistencia/                  # Capa de acceso a datos (parte del Modelo)
+│   │   ├── IBaseDAO.java              # Interfaz genérica CRUD (TP4)
+│   │   ├── ConexionBD.java            # Singleton para gestión de conexiones
+│   │   ├── VisitanteDAO.java
+│   │   ├── InternoDAO.java
+│   │   ├── VisitaDAO.java
+│   │   ├── AutorizacionDAO.java
+│   │   ├── RestriccionDAO.java
+│   │   ├── UsuarioDAO.java
+│   │   ├── EstablecimientoDAO.java
+│   │   ├── ReporteDAO.java
+│   │   ├── RepositorioMemoria.java    # Repositorio en memoria (modo offline)
+│   │   └── GestorModo.java            # Gestor de modo online/offline
+│   └── utilidades/                    # Servicios y validadores
+│       ├── ValidadorDatos.java        # Validaciones de formato
+│       ├── ServicioValidacionSeguridad.java  # Validaciones RF003 (6 pasos)
+│       ├── GeneradorReportes.java     # Generación de reportes HTML
+│       ├── ServicioLogs.java          # Sistema de logging
+│       └── ServicioBackup.java        # Servicio de backup (stub)
 ├── resources/
-│   └── config.properties              # Configuración BD
+│   └── config.properties              # Configuración de base de datos
 ├── lib/
-│   └── mysql-connector-j-9.4.0.jar    # Driver JDBC
+│   └── mysql-connector-j-9.4.0.jar    # Driver JDBC MySQL
 ├── database/
-│   ├── sigvip_db.sql                  # Schema
-│   ├── datos_de_prueba.sql            # Datos iniciales
-│   └── consultas_sql_prueba.sql       # Queries de referencia
+│   ├── sigvip_db.sql                  # Script de creación de schema
+│   ├── datos_de_prueba.sql            # Datos iniciales de prueba
+│   └── consultas_sql_prueba.sql       # Queries SQL de referencia
 └── README.md                          # Este archivo
 ```
 
