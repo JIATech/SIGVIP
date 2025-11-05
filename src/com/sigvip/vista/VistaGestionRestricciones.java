@@ -923,7 +923,7 @@ public class VistaGestionRestricciones extends JFrame {
 
             // Filtrar inactivas si filtro es "Activas"
             if ("Inactivas".equals(filtroEstado)) {
-                restricciones.removeIf(r -> r.isActiva());
+                restricciones.removeIf(r -> r.isActivo());
             }
 
             // Agregar a la tabla

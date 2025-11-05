@@ -4,6 +4,7 @@ import com.sigvip.modelo.*;
 import com.sigvip.modelo.enums.TipoReporte;
 import com.sigvip.persistencia.*;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -737,5 +738,224 @@ public class GeneradorReportes {
         }
         json.append("}");
         return json.toString();
+    }
+
+    // ===== EXPORTACIÓN A CSV/TXT (TP4: Uso de archivos) =====
+
+    /**
+     * Exporta una lista de visitas a formato CSV.
+     * Cumple con requisito académico TP4: "Uso de archivos para guardar información"
+     *
+     * Formato CSV: ID,Fecha,DNI Visitante,Visitante,Legajo,Interno,Hora Ingreso,Hora Egreso,Duración,Estado
+     *
+     * @param visitas lista de visitas a exportar
+     * @param rutaDestino ruta del archivo CSV destino
+     * @throws IOException si ocurre un error al escribir el archivo
+     */
+    public void exportarVisitasCSV(List<Visita> visitas, String rutaDestino) throws IOException {
+        try (java.io.FileWriter fw = new java.io.FileWriter(rutaDestino);
+             java.io.BufferedWriter bw = new java.io.BufferedWriter(fw);
+             java.io.PrintWriter out = new java.io.PrintWriter(bw)) {
+
+            // Encabezado CSV
+            out.println("ID,Fecha,DNI Visitante,Visitante,Legajo Interno,Interno,Hora Ingreso,Hora Egreso,Duracion,Estado");
+
+            // Datos
+            for (Visita visita : visitas) {
+                StringBuilder linea = new StringBuilder();
+                linea.append(visita.getIdVisita()).append(",");
+                linea.append(formatoFecha.format(visita.getFechaVisita())).append(",");
+                linea.append(visita.getVisitante().getDni()).append(",");
+                linea.append("\"").append(visita.getVisitante().getNombreCompleto()).append("\",");
+                linea.append(visita.getInterno().getNumeroLegajo()).append(",");
+                linea.append("\"").append(visita.getInterno().getNombreCompleto()).append("\",");
+                linea.append(formatoHora.format(visita.getHoraIngreso())).append(",");
+                linea.append(visita.getHoraEgreso() != null ?
+                    formatoHora.format(visita.getHoraEgreso()) : "EN_CURSO").append(",");
+                linea.append("\"").append(visita.getDuracionFormateada()).append("\",");
+                linea.append(visita.getEstadoVisita());
+
+                out.println(linea.toString());
+            }
+        }
+
+        ServicioLogs.getInstancia().info("SISTEMA", "EXPORT_CSV",
+            "Exportadas " + visitas.size() + " visitas a CSV: " + rutaDestino);
+    }
+
+    /**
+     * Exporta una lista de visitas a formato TXT (texto plano legible).
+     * Cumple con requisito académico TP4: "Uso de archivos para guardar información"
+     *
+     * @param visitas lista de visitas a exportar
+     * @param rutaDestino ruta del archivo TXT destino
+     * @throws IOException si ocurre un error al escribir el archivo
+     */
+    public void exportarVisitasTXT(List<Visita> visitas, String rutaDestino) throws IOException {
+        try (java.io.FileWriter fw = new java.io.FileWriter(rutaDestino);
+             java.io.BufferedWriter bw = new java.io.BufferedWriter(fw);
+             java.io.PrintWriter out = new java.io.PrintWriter(bw)) {
+
+            // Encabezado
+            out.println("===============================================");
+            out.println("   SIGVIP - REPORTE DE VISITAS");
+            out.println("   Generado: " + formatoCompleto.format(new Date()));
+            out.println("===============================================");
+            out.println();
+            out.println("Total de registros: " + visitas.size());
+            out.println();
+
+            // Datos en formato legible
+            int contador = 1;
+            for (Visita visita : visitas) {
+                out.println("--- VISITA #" + contador + " (ID: " + visita.getIdVisita() + ") ---");
+                out.println("Fecha:          " + formatoFecha.format(visita.getFechaVisita()));
+                out.println("Visitante:      " + visita.getVisitante().getNombreCompleto() +
+                    " (DNI: " + visita.getVisitante().getDni() + ")");
+                out.println("Interno:        " + visita.getInterno().getNombreCompleto() +
+                    " (Legajo: " + visita.getInterno().getNumeroLegajo() + ")");
+                out.println("Hora Ingreso:   " + formatoHora.format(visita.getHoraIngreso()));
+                out.println("Hora Egreso:    " + (visita.getHoraEgreso() != null ?
+                    formatoHora.format(visita.getHoraEgreso()) : "EN CURSO"));
+                out.println("Duración:       " + visita.getDuracionFormateada());
+                out.println("Estado:         " + visita.getEstadoVisita());
+                out.println();
+                contador++;
+            }
+
+            out.println("===============================================");
+            out.println("   FIN DEL REPORTE");
+            out.println("===============================================");
+        }
+
+        ServicioLogs.getInstancia().info("SISTEMA", "EXPORT_TXT",
+            "Exportadas " + visitas.size() + " visitas a TXT: " + rutaDestino);
+    }
+
+    /**
+     * Exporta una lista de restricciones a formato CSV.
+     *
+     * @param restricciones lista de restricciones a exportar
+     * @param rutaDestino ruta del archivo CSV destino
+     * @throws IOException si ocurre un error al escribir el archivo
+     */
+    public void exportarRestriccionesCSV(List<Restriccion> restricciones, String rutaDestino) throws IOException {
+        try (java.io.FileWriter fw = new java.io.FileWriter(rutaDestino);
+             java.io.BufferedWriter bw = new java.io.BufferedWriter(fw);
+             java.io.PrintWriter out = new java.io.PrintWriter(bw)) {
+
+            // Encabezado CSV
+            out.println("ID,DNI Visitante,Visitante,Tipo Restriccion,Motivo,Fecha Inicio,Fecha Fin,Aplicable A,Activa");
+
+            // Datos
+            for (Restriccion restriccion : restricciones) {
+                StringBuilder linea = new StringBuilder();
+                linea.append(restriccion.getIdRestriccion()).append(",");
+                linea.append(restriccion.getVisitante().getDni()).append(",");
+                linea.append("\"").append(restriccion.getVisitante().getNombreCompleto()).append("\",");
+                linea.append(restriccion.getTipoRestriccion()).append(",");
+                linea.append("\"").append(restriccion.getMotivo()).append("\",");
+                linea.append(formatoFecha.format(restriccion.getFechaInicio())).append(",");
+                linea.append(restriccion.getFechaFin() != null ?
+                    formatoFecha.format(restriccion.getFechaFin()) : "INDEFINIDA").append(",");
+                linea.append(restriccion.getAplicableA()).append(",");
+                linea.append(restriccion.isActivo() ? "SI" : "NO");
+
+                out.println(linea.toString());
+            }
+        }
+
+        ServicioLogs.getInstancia().info("SISTEMA", "EXPORT_CSV",
+            "Exportadas " + restricciones.size() + " restricciones a CSV: " + rutaDestino);
+    }
+
+    /**
+     * Exporta una lista de autorizaciones a formato CSV.
+     *
+     * @param autorizaciones lista de autorizaciones a exportar
+     * @param rutaDestino ruta del archivo CSV destino
+     * @throws IOException si ocurre un error al escribir el archivo
+     */
+    public void exportarAutorizacionesCSV(List<Autorizacion> autorizaciones, String rutaDestino) throws IOException {
+        try (java.io.FileWriter fw = new java.io.FileWriter(rutaDestino);
+             java.io.BufferedWriter bw = new java.io.BufferedWriter(fw);
+             java.io.PrintWriter out = new java.io.PrintWriter(bw)) {
+
+            // Encabezado CSV
+            out.println("ID,DNI Visitante,Visitante,Legajo Interno,Interno,Tipo Relacion,Fecha Autorizacion,Fecha Vencimiento,Estado");
+
+            // Datos
+            for (Autorizacion autorizacion : autorizaciones) {
+                StringBuilder linea = new StringBuilder();
+                linea.append(autorizacion.getIdAutorizacion()).append(",");
+                linea.append(autorizacion.getVisitante().getDni()).append(",");
+                linea.append("\"").append(autorizacion.getVisitante().getNombreCompleto()).append("\",");
+                linea.append(autorizacion.getInterno().getNumeroLegajo()).append(",");
+                linea.append("\"").append(autorizacion.getInterno().getNombreCompleto()).append("\",");
+                linea.append(autorizacion.getTipoRelacion()).append(",");
+                linea.append(formatoFecha.format(autorizacion.getFechaAutorizacion())).append(",");
+                linea.append(autorizacion.getFechaVencimiento() != null ?
+                    formatoFecha.format(autorizacion.getFechaVencimiento()) : "INDEFINIDA").append(",");
+                linea.append(autorizacion.getEstado());
+
+                out.println(linea.toString());
+            }
+        }
+
+        ServicioLogs.getInstancia().info("SISTEMA", "EXPORT_CSV",
+            "Exportadas " + autorizaciones.size() + " autorizaciones a CSV: " + rutaDestino);
+    }
+
+    /**
+     * Exporta estadísticas a formato TXT legible.
+     *
+     * @param fechaInicio fecha de inicio del período analizado
+     * @param fechaFin fecha de fin del período analizado
+     * @param rutaDestino ruta del archivo TXT destino
+     * @throws SQLException si ocurre error en base de datos
+     * @throws IOException si ocurre un error al escribir el archivo
+     */
+    public void exportarEstadisticasTXT(Date fechaInicio, Date fechaFin, String rutaDestino)
+            throws SQLException, IOException {
+
+        List<Visita> visitas = visitaDAO.buscarPorRangoFechas(fechaInicio, fechaFin);
+        EstadisticasVisitas estadisticas = calcularEstadisticas(visitas, fechaInicio, fechaFin);
+
+        try (java.io.FileWriter fw = new java.io.FileWriter(rutaDestino);
+             java.io.BufferedWriter bw = new java.io.BufferedWriter(fw);
+             java.io.PrintWriter out = new java.io.PrintWriter(bw)) {
+
+            out.println("===============================================");
+            out.println("   SIGVIP - ESTADÍSTICAS DE VISITAS");
+            out.println("   Período: " + formatoFecha.format(fechaInicio) +
+                " al " + formatoFecha.format(fechaFin));
+            out.println("   Generado: " + formatoCompleto.format(new Date()));
+            out.println("===============================================");
+            out.println();
+
+            out.println("MÉTRICAS GENERALES:");
+            out.println("-------------------------------------------------");
+            out.println("Total de Visitas:         " + estadisticas.totalVisitas);
+            out.println("Visitantes Únicos:        " + estadisticas.visitantesUnicos);
+            out.println("Internos Visitados:       " + estadisticas.internosVisitados);
+            out.println("Duración Promedio:        " + estadisticas.duracionPromedio);
+            out.println();
+
+            out.println("VISITAS POR ESTADO:");
+            out.println("-------------------------------------------------");
+            for (Map.Entry<String, Integer> entry : estadisticas.visitasPorEstado.entrySet()) {
+                double porcentaje = (entry.getValue() * 100.0) / estadisticas.totalVisitas;
+                out.println(String.format("%-20s: %4d (%5.1f%%)",
+                    entry.getKey(), entry.getValue(), porcentaje));
+            }
+            out.println();
+
+            out.println("===============================================");
+            out.println("   FIN DEL REPORTE");
+            out.println("===============================================");
+        }
+
+        ServicioLogs.getInstancia().info("SISTEMA", "EXPORT_STATS_TXT",
+            "Estadísticas exportadas a TXT: " + rutaDestino);
     }
 }
