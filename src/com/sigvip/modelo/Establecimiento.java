@@ -12,10 +12,13 @@ import java.util.*;
  * Entidad que representa un establecimiento penitenciario.
  * Mapea a la tabla 'establecimientos' de la base de datos.
  *
+ * <p><b>TP4 - Herencia de Clase Abstracta:</b></p>
+ * Esta clase hereda de EntidadBase el campo activo.
+ *
  * Especificación: PDF Sección 10.3, tabla 'establecimientos'
  * Responsabilidades: Configuración de horarios y modalidades de visita
  */
-public class Establecimiento {
+public class Establecimiento extends EntidadBase {
 
     // Atributos según especificación de tabla 'establecimientos'
     private Long idEstablecimiento;
@@ -27,7 +30,7 @@ public class Establecimiento {
     private Date horarioInicio;   // Hora de inicio de visitas (solo componente TIME)
     private Date horarioFin;      // Hora de fin de visitas (solo componente TIME)
     private int capacidadMaxima;
-    private boolean activo;
+    // activo heredado de EntidadBase
 
     // Relaciones
     private List<Interno> internos;
@@ -36,8 +39,8 @@ public class Establecimiento {
      * Constructor vacío requerido para instanciación en DAOs.
      */
     public Establecimiento() {
+        super(); // Inicializa activo=true
         this.internos = new ArrayList<>();
-        this.activo = true;
         this.diasHabilita = "LUNES,MARTES,MIERCOLES,JUEVES,VIERNES"; // Default
     }
 
@@ -71,7 +74,7 @@ public class Establecimiento {
             return false;
         }
 
-        if (!activo) {
+        if (!isActivo()) { // Usa isActivo() heredado de EntidadBase
             return false;
         }
 
@@ -250,6 +253,70 @@ public class Establecimiento {
         return visitasActuales >= capacidadMaxima;
     }
 
+    // ===== IMPLEMENTACIÓN DE MÉTODOS ABSTRACTOS DE EntidadBase =====
+
+    /**
+     * Valida las reglas de negocio para un establecimiento.
+     *
+     * @return true si todas las validaciones pasan
+     * @throws IllegalStateException si hay errores críticos de validación
+     */
+    @Override
+    public boolean validar() throws IllegalStateException {
+        StringBuilder errores = new StringBuilder();
+
+        if (nombre == null || nombre.trim().isEmpty()) {
+            errores.append("Nombre obligatorio. ");
+        }
+
+        if (modalidadVisita == null) {
+            errores.append("Modalidad de visita obligatoria. ");
+        }
+
+        if (horarioInicio == null) {
+            errores.append("Horario de inicio obligatorio. ");
+        }
+
+        if (horarioFin == null) {
+            errores.append("Horario de fin obligatorio. ");
+        }
+
+        if (diasHabilita == null || diasHabilita.trim().isEmpty()) {
+            errores.append("Días habilitados obligatorios. ");
+        }
+
+        if (errores.length() > 0) {
+            throw new IllegalStateException("Establecimiento inválido: " + errores.toString());
+        }
+
+        return true;
+    }
+
+    /**
+     * Obtiene un resumen textual del establecimiento para logs y auditoría.
+     *
+     * @return String con resumen de la entidad
+     */
+    @Override
+    public String obtenerResumen() {
+        return String.format("Establecimiento[ID=%d, Nombre=%s, Modalidad=%s, Horario=%s, Activo=%s]",
+                idEstablecimiento != null ? idEstablecimiento : 0L,
+                nombre != null ? nombre : "N/A",
+                modalidadVisita != null ? modalidadVisita : "N/A",
+                getHorarioFormateado(),
+                isActivo() ? "SÍ" : "NO");
+    }
+
+    /**
+     * Verifica si el establecimiento es nuevo (aún no persistido).
+     *
+     * @return true si idEstablecimiento es null
+     */
+    @Override
+    public boolean esNuevo() {
+        return idEstablecimiento == null;
+    }
+
     // ===== GETTERS Y SETTERS =====
 
     public Long getIdEstablecimiento() {
@@ -324,13 +391,7 @@ public class Establecimiento {
         this.capacidadMaxima = capacidadMaxima;
     }
 
-    public boolean isActivo() {
-        return activo;
-    }
-
-    public void setActivo(boolean activo) {
-        this.activo = activo;
-    }
+    // isActivo() y setActivo() heredados de EntidadBase
 
     public List<Interno> getInternos() {
         return internos;

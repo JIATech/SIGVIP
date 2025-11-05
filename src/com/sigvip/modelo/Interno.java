@@ -12,9 +12,12 @@ import java.util.Objects;
  * Entidad que representa un interno (persona privada de libertad) en el sistema.
  * Mapea a la tabla 'internos' de la base de datos.
  *
+ * <p><b>TP4 - Herencia de Clase Abstracta:</b></p>
+ * Esta clase hereda de EntidadBase, demostrando herencia y reutilización de código.
+ *
  * Especificación: PDF Sección 9.2.2, página 13
  */
-public class Interno {
+public class Interno extends EntidadBase {
 
     // Atributos según especificación de tabla 'internos'
     private Long idInterno;
@@ -39,6 +42,7 @@ public class Interno {
      * Constructor vacío requerido para instanciación en DAOs.
      */
     public Interno() {
+        super();
         this.autorizaciones = new ArrayList<>();
         this.estado = EstadoInterno.ACTIVO;
     }
@@ -134,6 +138,73 @@ public class Interno {
      */
     public String getUbicacionCompleta() {
         return "Pabellón " + pabellonActual + " - Piso " + pisoActual;
+    }
+
+    // ===== IMPLEMENTACIÓN DE MÉTODOS ABSTRACTOS DE EntidadBase =====
+
+    /**
+     * Valida las reglas de negocio para un interno.
+     *
+     * @return true si todas las validaciones pasan
+     * @throws IllegalStateException si hay errores críticos de validación
+     */
+    @Override
+    public boolean validar() throws IllegalStateException {
+        StringBuilder errores = new StringBuilder();
+
+        if (numeroLegajo == null || numeroLegajo.trim().isEmpty()) {
+            errores.append("Número de legajo obligatorio. ");
+        }
+
+        if (apellido == null || apellido.trim().isEmpty()) {
+            errores.append("Apellido obligatorio. ");
+        }
+
+        if (nombre == null || nombre.trim().isEmpty()) {
+            errores.append("Nombre obligatorio. ");
+        }
+
+        if (dni == null || dni.trim().isEmpty()) {
+            errores.append("DNI obligatorio. ");
+        }
+
+        if (establecimiento == null) {
+            errores.append("Establecimiento obligatorio. ");
+        }
+
+        if (fechaIngreso != null && fechaIngreso.after(new Date())) {
+            errores.append("La fecha de ingreso no puede ser futura. ");
+        }
+
+        if (errores.length() > 0) {
+            throw new IllegalStateException("Interno inválido: " + errores.toString());
+        }
+
+        return true;
+    }
+
+    /**
+     * Obtiene un resumen textual del interno para logs y auditoría.
+     *
+     * @return String con resumen de la entidad
+     */
+    @Override
+    public String obtenerResumen() {
+        return String.format("Interno[Legajo=%s, Nombre=%s, Ubicación=%s, Estado=%s]",
+                numeroLegajo != null ? numeroLegajo : "N/A",
+                getNombreCompleto(),
+                pabellonActual != null ? getUbicacionCompleta() : "N/A",
+                estado != null ? estado : "N/A");
+    }
+
+    /**
+     * Verifica si el interno es nuevo (aún no persistido).
+     *
+     * @return true si idInterno es null
+     */
+    @Override
+    public boolean esNuevo() {
+        return idInterno == null;
     }
 
     // ===== GETTERS Y SETTERS =====

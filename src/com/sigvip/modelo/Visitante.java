@@ -14,9 +14,17 @@ import java.util.Objects;
  * Entidad que representa un visitante autorizado en el sistema penitenciario.
  * Mapea a la tabla 'visitantes' de la base de datos.
  *
+ * <p><b>TP4 - Herencia de Clase Abstracta:</b></p>
+ * Esta clase hereda de EntidadBase, demostrando:
+ * <ul>
+ *   <li>Herencia de campos comunes (fechaCreacion, fechaModificacion, activo)</li>
+ *   <li>Implementación de métodos abstractos (validar(), obtenerResumen())</li>
+ *   <li>Reutilización de código y cumplimiento del principio DRY</li>
+ * </ul>
+ *
  * Especificación: PDF Sección 9.2.2, página 13
  */
-public class Visitante {
+public class Visitante extends EntidadBase {
 
     // Atributos según especificación de tabla 'visitantes'
     private Long idVisitante;
@@ -29,18 +37,18 @@ public class Visitante {
     private Date fechaNacimiento;
     private byte[] foto;
     private EstadoVisitante estado;
-    private Date fechaRegistro;
 
     // Relaciones
     private List<Restriccion> restricciones;
 
     /**
      * Constructor vacío requerido para instanciación en DAOs.
+     * Llama a super() para inicializar campos de EntidadBase.
      */
     public Visitante() {
+        super(); // Inicializa fechaCreacion, fechaModificacion, activo
         this.restricciones = new ArrayList<>();
         this.estado = EstadoVisitante.ACTIVO;
-        this.fechaRegistro = new Date();
     }
 
     /**
@@ -147,6 +155,82 @@ public class Visitante {
         return apellido + ", " + nombre;
     }
 
+    // ===== IMPLEMENTACIÓN DE MÉTODOS ABSTRACTOS DE EntidadBase =====
+
+    /**
+     * Valida las reglas de negocio para un visitante.
+     *
+     * <p>Reglas de validación:</p>
+     * <ul>
+     *   <li>DNI válido (7-8 dígitos numéricos)</li>
+     *   <li>Mayor de edad (>= 18 años)</li>
+     *   <li>Apellido y nombre no vacíos</li>
+     *   <li>Fecha de nacimiento definida</li>
+     * </ul>
+     *
+     * @return true si todas las validaciones pasan
+     * @throws IllegalStateException si hay errores críticos de validación
+     */
+    @Override
+    public boolean validar() throws IllegalStateException {
+        StringBuilder errores = new StringBuilder();
+
+        // Validar DNI
+        if (!validarDNI()) {
+            errores.append("DNI inválido (debe ser numérico de 7-8 dígitos). ");
+        }
+
+        // Validar mayor de edad
+        if (!esMayorDeEdad()) {
+            errores.append("El visitante debe ser mayor de 18 años. ");
+        }
+
+        // Validar datos obligatorios
+        if (apellido == null || apellido.trim().isEmpty()) {
+            errores.append("Apellido obligatorio. ");
+        }
+
+        if (nombre == null || nombre.trim().isEmpty()) {
+            errores.append("Nombre obligatorio. ");
+        }
+
+        if (fechaNacimiento == null) {
+            errores.append("Fecha de nacimiento obligatoria. ");
+        }
+
+        // Si hay errores, lanzar excepción
+        if (errores.length() > 0) {
+            throw new IllegalStateException("Visitante inválido: " + errores.toString());
+        }
+
+        return true;
+    }
+
+    /**
+     * Obtiene un resumen textual del visitante para logs y auditoría.
+     *
+     * @return String con resumen de la entidad
+     */
+    @Override
+    public String obtenerResumen() {
+        return String.format("Visitante[DNI=%s, Nombre=%s, Estado=%s, Edad=%d años]",
+                dni != null ? dni : "N/A",
+                getNombreCompleto(),
+                estado != null ? estado : "N/A",
+                calcularEdad());
+    }
+
+    /**
+     * Verifica si el visitante es nuevo (aún no persistido).
+     * Sobrescribe el método de EntidadBase para verificar el ID específico.
+     *
+     * @return true si idVisitante es null
+     */
+    @Override
+    public boolean esNuevo() {
+        return idVisitante == null;
+    }
+
     // ===== GETTERS Y SETTERS =====
 
     public Long getIdVisitante() {
@@ -229,12 +313,24 @@ public class Visitante {
         this.estado = estado;
     }
 
+    /**
+     * Obtiene la fecha de registro del visitante.
+     * Delega a getFechaCreacion() de EntidadBase.
+     *
+     * @return fecha de registro (equivalente a fechaCreacion)
+     */
     public Date getFechaRegistro() {
-        return fechaRegistro;
+        return getFechaCreacion();
     }
 
+    /**
+     * Establece la fecha de registro del visitante.
+     * Delega a setFechaCreacion() de EntidadBase.
+     *
+     * @param fechaRegistro fecha de registro
+     */
     public void setFechaRegistro(Date fechaRegistro) {
-        this.fechaRegistro = fechaRegistro;
+        setFechaCreacion(fechaRegistro);
     }
 
     public List<Restriccion> getRestricciones() {

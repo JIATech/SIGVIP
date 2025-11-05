@@ -13,10 +13,13 @@ import java.util.Objects;
  * Registra el ingreso y egreso de un visitante para ver a un interno.
  * Mapea a la tabla 'visitas' de la base de datos.
  *
+ * <p><b>TP4 - Herencia de Clase Abstracta:</b></p>
+ * Esta clase hereda de EntidadBase, demostrando herencia y reutilización de código.
+ *
  * Especificación: PDF Sección 9.2.2, página 13-14
  * Ciclo de vida: PROGRAMADA → EN_CURSO → FINALIZADA (o CANCELADA)
  */
-public class Visita {
+public class Visita extends EntidadBase {
 
     // Atributos según especificación de tabla 'visitas'
     private Long idVisita;
@@ -34,6 +37,7 @@ public class Visita {
      * Constructor vacío requerido para instanciación en DAOs.
      */
     public Visita() {
+        super();
         this.estadoVisita = EstadoVisita.PROGRAMADA;
     }
 
@@ -183,6 +187,66 @@ public class Visita {
 
         Establecimiento estab = interno.getEstablecimiento();
         return estab.horarioPermiteVisita(horaIngreso);
+    }
+
+    // ===== IMPLEMENTACIÓN DE MÉTODOS ABSTRACTOS DE EntidadBase =====
+
+    /**
+     * Valida las reglas de negocio para una visita.
+     *
+     * @return true si todas las validaciones pasan
+     * @throws IllegalStateException si hay errores críticos de validación
+     */
+    @Override
+    public boolean validar() throws IllegalStateException {
+        StringBuilder errores = new StringBuilder();
+
+        if (visitante == null) {
+            errores.append("Visitante obligatorio. ");
+        }
+
+        if (interno == null) {
+            errores.append("Interno obligatorio. ");
+        }
+
+        if (fechaVisita == null) {
+            errores.append("Fecha de visita obligatoria. ");
+        }
+
+        if (estadoVisita == null) {
+            errores.append("Estado de visita obligatorio. ");
+        }
+
+        if (errores.length() > 0) {
+            throw new IllegalStateException("Visita inválida: " + errores.toString());
+        }
+
+        return true;
+    }
+
+    /**
+     * Obtiene un resumen textual de la visita para logs y auditoría.
+     *
+     * @return String con resumen de la entidad
+     */
+    @Override
+    public String obtenerResumen() {
+        return String.format("Visita[ID=%d, Visitante=%s, Interno=%s, Estado=%s, Duración=%s]",
+                idVisita != null ? idVisita : 0L,
+                visitante != null ? visitante.getNombreCompleto() : "N/A",
+                interno != null ? interno.getNombreCompleto() : "N/A",
+                estadoVisita != null ? estadoVisita : "N/A",
+                getDuracionFormateada());
+    }
+
+    /**
+     * Verifica si la visita es nueva (aún no persistida).
+     *
+     * @return true si idVisita es null
+     */
+    @Override
+    public boolean esNuevo() {
+        return idVisita == null;
     }
 
     // ===== GETTERS Y SETTERS =====

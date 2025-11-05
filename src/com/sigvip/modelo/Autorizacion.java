@@ -13,10 +13,13 @@ import java.util.Objects;
  * Vincula un visitante con un interno específico estableciendo el permiso de visita.
  * Mapea a la tabla 'autorizaciones' de la base de datos.
  *
+ * <p><b>TP4 - Herencia de Clase Abstracta:</b></p>
+ * Esta clase hereda de EntidadBase, demostrando herencia y reutilización de código.
+ *
  * Especificación: PDF Sección 9.2.2, página 14
  * Constraint: UNIQUE(id_visitante, id_interno) - solo una autorización por par
  */
-public class Autorizacion {
+public class Autorizacion extends EntidadBase {
 
     // Atributos según especificación de tabla 'autorizaciones'
     private Long idAutorizacion;
@@ -34,6 +37,7 @@ public class Autorizacion {
      * Constructor vacío requerido para instanciación en DAOs.
      */
     public Autorizacion() {
+        super();
         this.estado = EstadoAutorizacion.VIGENTE;
         this.fechaAutorizacion = new Date();
     }
@@ -178,6 +182,71 @@ public class Autorizacion {
         }
 
         this.estado = EstadoAutorizacion.VIGENTE;
+    }
+
+    // ===== IMPLEMENTACIÓN DE MÉTODOS ABSTRACTOS DE EntidadBase =====
+
+    /**
+     * Valida las reglas de negocio para una autorización.
+     *
+     * @return true si todas las validaciones pasan
+     * @throws IllegalStateException si hay errores críticos de validación
+     */
+    @Override
+    public boolean validar() throws IllegalStateException {
+        StringBuilder errores = new StringBuilder();
+
+        if (visitante == null) {
+            errores.append("Visitante obligatorio. ");
+        }
+
+        if (interno == null) {
+            errores.append("Interno obligatorio. ");
+        }
+
+        if (tipoRelacion == null) {
+            errores.append("Tipo de relación obligatorio. ");
+        }
+
+        if (estado == null) {
+            errores.append("Estado obligatorio. ");
+        }
+
+        if (fechaAutorizacion == null) {
+            errores.append("Fecha de autorización obligatoria. ");
+        }
+
+        if (errores.length() > 0) {
+            throw new IllegalStateException("Autorización inválida: " + errores.toString());
+        }
+
+        return true;
+    }
+
+    /**
+     * Obtiene un resumen textual de la autorización para logs y auditoría.
+     *
+     * @return String con resumen de la entidad
+     */
+    @Override
+    public String obtenerResumen() {
+        return String.format("Autorizacion[ID=%d, Visitante=%s, Interno=%s, Relación=%s, Estado=%s, Vigente=%s]",
+                idAutorizacion != null ? idAutorizacion : 0L,
+                visitante != null ? visitante.getNombreCompleto() : "N/A",
+                interno != null ? interno.getNombreCompleto() : "N/A",
+                tipoRelacion != null ? tipoRelacion : "N/A",
+                estado != null ? estado : "N/A",
+                estaVigente() ? "SÍ" : "NO");
+    }
+
+    /**
+     * Verifica si la autorización es nueva (aún no persistida).
+     *
+     * @return true si idAutorizacion es null
+     */
+    @Override
+    public boolean esNuevo() {
+        return idAutorizacion == null;
     }
 
     // ===== GETTERS Y SETTERS =====

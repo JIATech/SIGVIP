@@ -12,10 +12,13 @@ import java.util.Objects;
  * Entidad que representa un usuario del sistema con acceso al SIGVIP.
  * Mapea a la tabla 'usuarios' de la base de datos.
  *
+ * <p><b>TP4 - Herencia de Clase Abstracta:</b></p>
+ * Esta clase hereda de EntidadBase los campos activo y fechaCreacion.
+ *
  * Especificación: PDF Sección 10.3, tabla 'usuarios'
  * Seguridad: Contraseñas almacenadas con hash SHA2-256
  */
-public class Usuario {
+public class Usuario extends EntidadBase {
 
     // Atributos según especificación de tabla 'usuarios'
     private Long idUsuario;
@@ -24,16 +27,14 @@ public class Usuario {
     private String nombreCompleto;
     private Rol rol;
     private Establecimiento establecimiento;
-    private boolean activo;
-    private Date fechaCreacion;
+    // activo y fechaCreacion heredados de EntidadBase
     private Date ultimoAcceso;
 
     /**
      * Constructor vacío requerido para instanciación en DAOs.
      */
     public Usuario() {
-        this.activo = true;
-        this.fechaCreacion = new Date();
+        super(); // Inicializa activo=true y fechaCreacion=now()
     }
 
     /**
@@ -153,6 +154,66 @@ public class Usuario {
         return rol != null && rol.tienePermisosDe(rolRequerido);
     }
 
+    // ===== IMPLEMENTACIÓN DE MÉTODOS ABSTRACTOS DE EntidadBase =====
+
+    /**
+     * Valida las reglas de negocio para un usuario.
+     *
+     * @return true si todas las validaciones pasan
+     * @throws IllegalStateException si hay errores críticos de validación
+     */
+    @Override
+    public boolean validar() throws IllegalStateException {
+        StringBuilder errores = new StringBuilder();
+
+        if (nombreUsuario == null || nombreUsuario.trim().isEmpty()) {
+            errores.append("Nombre de usuario obligatorio. ");
+        }
+
+        if (nombreCompleto == null || nombreCompleto.trim().isEmpty()) {
+            errores.append("Nombre completo obligatorio. ");
+        }
+
+        if (rol == null) {
+            errores.append("Rol obligatorio. ");
+        }
+
+        if (contrasena == null || contrasena.trim().isEmpty()) {
+            errores.append("Contraseña obligatoria. ");
+        }
+
+        if (errores.length() > 0) {
+            throw new IllegalStateException("Usuario inválido: " + errores.toString());
+        }
+
+        return true;
+    }
+
+    /**
+     * Obtiene un resumen textual del usuario para logs y auditoría.
+     *
+     * @return String con resumen de la entidad
+     */
+    @Override
+    public String obtenerResumen() {
+        return String.format("Usuario[ID=%d, Username=%s, Nombre=%s, Rol=%s, Activo=%s]",
+                idUsuario != null ? idUsuario : 0L,
+                nombreUsuario != null ? nombreUsuario : "N/A",
+                nombreCompleto != null ? nombreCompleto : "N/A",
+                rol != null ? rol : "N/A",
+                isActivo() ? "SÍ" : "NO");
+    }
+
+    /**
+     * Verifica si el usuario es nuevo (aún no persistido).
+     *
+     * @return true si idUsuario es null
+     */
+    @Override
+    public boolean esNuevo() {
+        return idUsuario == null;
+    }
+
     // ===== GETTERS Y SETTERS =====
 
     public Long getIdUsuario() {
@@ -204,21 +265,8 @@ public class Usuario {
         this.establecimiento = establecimiento;
     }
 
-    public boolean isActivo() {
-        return activo;
-    }
-
-    public void setActivo(boolean activo) {
-        this.activo = activo;
-    }
-
-    public Date getFechaCreacion() {
-        return fechaCreacion;
-    }
-
-    public void setFechaCreacion(Date fechaCreacion) {
-        this.fechaCreacion = fechaCreacion;
-    }
+    // isActivo() y setActivo() heredados de EntidadBase
+    // getFechaCreacion() y setFechaCreacion() heredados de EntidadBase
 
     public Date getUltimoAcceso() {
         return ultimoAcceso;

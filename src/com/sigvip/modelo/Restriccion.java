@@ -13,9 +13,12 @@ import java.util.Objects;
  * Impide que un visitante pueda ingresar a visitar.
  * Mapea a la tabla 'restricciones' de la base de datos.
  *
+ * <p><b>TP4 - Herencia de Clase Abstracta:</b></p>
+ * Esta clase hereda de EntidadBase el campo activo (activa en BD).
+ *
  * Especificación: PDF Sección 10.3, tabla 'restricciones'
  */
-public class Restriccion {
+public class Restriccion extends EntidadBase {
 
     // Atributos según especificación de tabla 'restricciones'
     private Long idRestriccion;
@@ -26,14 +29,14 @@ public class Restriccion {
     private Date fechaFin;  // NULL = restricción indefinida
     private AplicableA aplicableA;
     private Interno interno;  // Solo si aplicableA = INTERNO_ESPECIFICO
-    private boolean activa;
+    // activo heredado de EntidadBase (llamado 'activa' en BD)
     private Usuario creadoPor;
 
     /**
      * Constructor vacío requerido para instanciación en DAOs.
      */
     public Restriccion() {
-        this.activa = true;
+        super(); // Inicializa activo=true
         this.aplicableA = AplicableA.TODOS;
         this.fechaInicio = new Date();
     }
@@ -74,14 +77,14 @@ public class Restriccion {
      * Método crítico para validación de ingreso (RF003).
      *
      * Condiciones para estar activa:
-     * 1. Campo 'activa' debe ser true
+     * 1. Campo 'activo' (heredado) debe ser true
      * 2. Fecha actual >= fechaInicio
      * 3. Si tiene fechaFin, fecha actual <= fechaFin
      *
      * @return true si la restricción está vigente y activa
      */
     public boolean estaActiva() {
-        if (!activa) {
+        if (!isActivo()) { // Usa isActivo() heredado de EntidadBase
             return false;
         }
 
@@ -137,7 +140,7 @@ public class Restriccion {
      * @param motivo razón por la cual se levanta
      */
     public void levantar(String motivo) {
-        this.activa = false;
+        setActivo(false); // Usa setActivo() heredado de EntidadBase
         this.motivo += "\nLEVANTADA: " + motivo;
         this.fechaFin = new Date();  // Establecer fecha fin al momento actual
     }
@@ -149,11 +152,79 @@ public class Restriccion {
      * @throws IllegalStateException si la restricción no está activa
      */
     public void extender(Date nuevaFechaFin) {
-        if (!activa) {
+        if (!isActivo()) { // Usa isActivo() heredado de EntidadBase
             throw new IllegalStateException("No se puede extender una restricción inactiva");
         }
 
         this.fechaFin = nuevaFechaFin;
+    }
+
+    // ===== IMPLEMENTACIÓN DE MÉTODOS ABSTRACTOS DE EntidadBase =====
+
+    /**
+     * Valida las reglas de negocio para una restricción.
+     *
+     * @return true si todas las validaciones pasan
+     * @throws IllegalStateException si hay errores críticos de validación
+     */
+    @Override
+    public boolean validar() throws IllegalStateException {
+        StringBuilder errores = new StringBuilder();
+
+        if (visitante == null) {
+            errores.append("Visitante obligatorio. ");
+        }
+
+        if (tipoRestriccion == null) {
+            errores.append("Tipo de restricción obligatorio. ");
+        }
+
+        if (motivo == null || motivo.trim().isEmpty()) {
+            errores.append("Motivo obligatorio. ");
+        }
+
+        if (fechaInicio == null) {
+            errores.append("Fecha de inicio obligatoria. ");
+        }
+
+        if (aplicableA == null) {
+            errores.append("Aplicable a obligatorio. ");
+        }
+
+        if (aplicableA == AplicableA.INTERNO_ESPECIFICO && interno == null) {
+            errores.append("Debe especificar el interno para restricciones específicas. ");
+        }
+
+        if (errores.length() > 0) {
+            throw new IllegalStateException("Restricción inválida: " + errores.toString());
+        }
+
+        return true;
+    }
+
+    /**
+     * Obtiene un resumen textual de la restricción para logs y auditoría.
+     *
+     * @return String con resumen de la entidad
+     */
+    @Override
+    public String obtenerResumen() {
+        return String.format("Restriccion[ID=%d, Visitante=%s, Tipo=%s, Aplicable=%s, Activa=%s]",
+                idRestriccion != null ? idRestriccion : 0L,
+                visitante != null ? visitante.getNombreCompleto() : "N/A",
+                tipoRestriccion != null ? tipoRestriccion : "N/A",
+                aplicableA != null ? aplicableA : "N/A",
+                estaActiva() ? "SÍ" : "NO");
+    }
+
+    /**
+     * Verifica si la restricción es nueva (aún no persistida).
+     *
+     * @return true si idRestriccion es null
+     */
+    @Override
+    public boolean esNuevo() {
+        return idRestriccion == null;
     }
 
     // ===== GETTERS Y SETTERS =====
@@ -222,13 +293,8 @@ public class Restriccion {
         this.interno = interno;
     }
 
-    public boolean isActiva() {
-        return activa;
-    }
-
-    public void setActiva(boolean activa) {
-        this.activa = activa;
-    }
+    // isActiva() renombrado: usa isActivo() heredado de EntidadBase
+    // setActiva() renombrado: usa setActivo() heredado de EntidadBase
 
     public Usuario getCreadoPor() {
         return creadoPor;
