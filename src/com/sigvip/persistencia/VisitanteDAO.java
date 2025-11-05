@@ -12,13 +12,16 @@ import java.util.stream.Collectors;
  * DAO para operaciones CRUD de la entidad Visitante.
  * Implementa el acceso a la tabla 'visitantes' de la base de datos.
  *
+ * <p><b>TP4 - Implementa Interfaz IBaseDAO&lt;Visitante&gt;:</b></p>
+ * Demuestra el uso de interfaces y polimorfismo en Java.
+ *
  * <p>Modo Offline: Si no hay conexión a MySQL, usa RepositorioMemoria (datos en RAM).
  * Modo Online: Funcionamiento normal con JDBC y MySQL.
  *
  * Especificación: PDF Sección 11.2.3 - Capa de Persistencia
  * Seguridad: Todas las consultas usan PreparedStatement para prevenir SQL Injection
  */
-public class VisitanteDAO {
+public class VisitanteDAO implements IBaseDAO<Visitante> {
 
     private ConexionBD conexionBD;
 
@@ -36,6 +39,7 @@ public class VisitanteDAO {
      * @return ID generado para el visitante
      * @throws SQLException si ocurre un error en la inserción
      */
+    @Override
     public Long insertar(Visitante visitante) throws SQLException {
         // MODO OFFLINE: Usar repositorio en memoria
         if (GestorModo.getInstancia().isModoOffline()) {
@@ -44,8 +48,8 @@ public class VisitanteDAO {
 
         // MODO ONLINE: MySQL con JDBC
         String sql = "INSERT INTO visitantes (dni, apellido, nombre, fecha_nacimiento, " +
-                    "telefono, domicilio, foto, estado, fecha_registro) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    "telefono, domicilio, email, foto, estado, fecha_registro) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = conexionBD.getConexion();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -57,9 +61,10 @@ public class VisitanteDAO {
                            new java.sql.Date(visitante.getFechaNacimiento().getTime()) : null);
             stmt.setString(5, visitante.getTelefono());
             stmt.setString(6, visitante.getDomicilio());
-            stmt.setBytes(7, visitante.getFoto());
-            stmt.setString(8, visitante.getEstado() != null ? visitante.getEstado().name() : null);
-            stmt.setDate(9, visitante.getFechaRegistro() != null ?
+            stmt.setString(7, visitante.getEmail());
+            stmt.setBytes(8, visitante.getFoto());
+            stmt.setString(9, visitante.getEstado() != null ? visitante.getEstado().name() : null);
+            stmt.setDate(10, visitante.getFechaRegistro() != null ?
                             new java.sql.Date(visitante.getFechaRegistro().getTime()) : null);
 
             int filasAfectadas = stmt.executeUpdate();
@@ -88,6 +93,7 @@ public class VisitanteDAO {
      * @return visitante encontrado o null si no existe
      * @throws SQLException si ocurre un error en la consulta
      */
+    @Override
     public Visitante buscarPorId(Long id) throws SQLException {
         // MODO OFFLINE: Usar repositorio en memoria
         if (GestorModo.getInstancia().isModoOffline()) {
@@ -149,6 +155,7 @@ public class VisitanteDAO {
      * @return true si se actualizó correctamente
      * @throws SQLException si ocurre un error en la actualización
      */
+    @Override
     public boolean actualizar(Visitante visitante) throws SQLException {
         // MODO OFFLINE: Usar repositorio en memoria
         if (GestorModo.getInstancia().isModoOffline()) {
@@ -157,7 +164,7 @@ public class VisitanteDAO {
 
         // MODO ONLINE: MySQL con JDBC
         String sql = "UPDATE visitantes SET dni = ?, apellido = ?, nombre = ?, " +
-                    "fecha_nacimiento = ?, telefono = ?, domicilio = ?, " +
+                    "fecha_nacimiento = ?, telefono = ?, domicilio = ?, email = ?, " +
                     "foto = ?, estado = ? WHERE id_visitante = ?";
 
         try (Connection conn = conexionBD.getConexion();
@@ -170,9 +177,10 @@ public class VisitanteDAO {
                            new java.sql.Date(visitante.getFechaNacimiento().getTime()) : null);
             stmt.setString(5, visitante.getTelefono());
             stmt.setString(6, visitante.getDomicilio());
-            stmt.setBytes(7, visitante.getFoto());
-            stmt.setString(8, visitante.getEstado() != null ? visitante.getEstado().name() : null);
-            stmt.setLong(9, visitante.getIdVisitante());
+            stmt.setString(7, visitante.getEmail());
+            stmt.setBytes(8, visitante.getFoto());
+            stmt.setString(9, visitante.getEstado() != null ? visitante.getEstado().name() : null);
+            stmt.setLong(10, visitante.getIdVisitante());
 
             int filasAfectadas = stmt.executeUpdate();
             return filasAfectadas > 0;
@@ -187,6 +195,7 @@ public class VisitanteDAO {
      * @return true si se eliminó correctamente
      * @throws SQLException si ocurre un error en la eliminación
      */
+    @Override
     public boolean eliminar(Long id) throws SQLException {
         // MODO OFFLINE: Usar repositorio en memoria
         if (GestorModo.getInstancia().isModoOffline()) {
@@ -206,12 +215,13 @@ public class VisitanteDAO {
     }
 
     /**
-     * Obtiene todos los visitantes registrados.
+     * Lista todos los visitantes registrados.
      *
      * @return lista de todos los visitantes
      * @throws SQLException si ocurre un error en la consulta
      */
-    public List<Visitante> obtenerTodos() throws SQLException {
+    @Override
+    public List<Visitante> listarTodos() throws SQLException {
         // MODO OFFLINE: Usar repositorio en memoria
         if (GestorModo.getInstancia().isModoOffline()) {
             return RepositorioMemoria.getInstancia().listarVisitantes();
@@ -351,6 +361,7 @@ public class VisitanteDAO {
 
         visitante.setTelefono(rs.getString("telefono"));
         visitante.setDomicilio(rs.getString("domicilio"));
+        visitante.setEmail(rs.getString("email"));
         visitante.setFoto(rs.getBytes("foto"));
 
         String estadoStr = rs.getString("estado");

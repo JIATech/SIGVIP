@@ -37,6 +37,7 @@ CREATE TABLE visitantes (
     nombre VARCHAR(100) NOT NULL,
     domicilio VARCHAR(255),
     telefono VARCHAR(20),
+    email VARCHAR(100),
     fecha_nacimiento DATE NOT NULL,
     foto MEDIUMBLOB,
     estado ENUM('ACTIVO','SUSPENDIDO','INACTIVO') DEFAULT 'ACTIVO',
