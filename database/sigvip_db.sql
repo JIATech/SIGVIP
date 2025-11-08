@@ -21,7 +21,7 @@ CREATE TABLE establecimientos (
     nombre VARCHAR(150) NOT NULL,
     nombre_visita VARCHAR(100),
     modalidad_visita ENUM('PRESENCIAL','SECTOR','MIXTA') DEFAULT 'SECTOR',
-    dias_habilita VARCHAR(50),
+    dias_habilita VARCHAR(100),
     horario_inicio TIME,
     horario_fin TIME NOT NULL DEFAULT '16:00',
     activo BOOLEAN DEFAULT TRUE
