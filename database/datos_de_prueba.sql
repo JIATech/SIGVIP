@@ -3,22 +3,33 @@
 -- Unidad Penitenciaria Única: Lisandro Olmos
 -- ============================================
 
--- Limpieza de datos existentes
-DELETE FROM autorizaciones;
-DELETE FROM visitas;
-DELETE FROM restricciones;
-DELETE FROM internos;
-DELETE FROM visitantes;
-DELETE FROM usuarios;
-DELETE FROM establecimientos;
--- Resetear auto_increment
-ALTER TABLE autorizaciones AUTO_INCREMENT = 1;
-ALTER TABLE visitas AUTO_INCREMENT = 1;
-ALTER TABLE restricciones AUTO_INCREMENT = 1;
-ALTER TABLE internos AUTO_INCREMENT = 1;
-ALTER TABLE visitantes AUTO_INCREMENT = 1;
-ALTER TABLE usuarios AUTO_INCREMENT = 1;
-ALTER TABLE establecimientos AUTO_INCREMENT = 1;
+-- Asegurar codificación UTF-8
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
+
+-- Limpieza de datos existentes (con foreign keys desactivadas)
+SET FOREIGN_KEY_CHECKS = 0;
+TRUNCATE TABLE auditoria;
+TRUNCATE TABLE reportes_generados;
+TRUNCATE TABLE autorizaciones;
+TRUNCATE TABLE visitas;
+TRUNCATE TABLE restricciones;
+TRUNCATE TABLE internos;
+TRUNCATE TABLE visitantes;
+TRUNCATE TABLE usuarios;
+TRUNCATE TABLE establecimientos;
+SET FOREIGN_KEY_CHECKS = 1;
+
+-- Resetear auto_increment (opcional, TRUNCATE ya lo hace)
+-- ALTER TABLE establecimientos AUTO_INCREMENT = 1;
+-- ALTER TABLE visitantes AUTO_INCREMENT = 1;
+-- ALTER TABLE internos AUTO_INCREMENT = 1;
+-- ALTER TABLE usuarios AUTO_INCREMENT = 1;
+-- ALTER TABLE autorizaciones AUTO_INCREMENT = 1;
+-- ALTER TABLE visitas AUTO_INCREMENT = 1;
+-- ALTER TABLE restricciones AUTO_INCREMENT = 1;
+-- ALTER TABLE auditoria AUTO_INCREMENT = 1;
+-- ALTER TABLE reportes_generados AUTO_INCREMENT = 1;
 
 -- ============================================
 -- ESTABLECIMIENTO ÚNICO
