@@ -10,6 +10,37 @@ Profesor: Marcos Darío Aranda
 
 SIGVIP es un sistema de escritorio desarrollado en Java para la gestión integral de visitas a establecimientos penitenciarios. Implementa control de acceso, registro de visitantes, autorizaciones y reportes, cumpliendo con restricciones académicas estrictas.
 
+## 🎥 Demo del Sistema
+
+[![Ver Demo de SIGVIP](https://img.youtube.com/vi/8_KkTJyROW0/0.jpg)](https://www.youtube.com/watch?v=8_KkTJyROW0)
+
+**Video demostrativo (3-4 minutos)** donde se muestra el flujo completo del sistema:
+
+📋 **Estructura del Código**:
+- Arquitectura MVC organizada en paquetes (modelo, vista, controlador)
+- Entity classes y DAOs con JDBC puro
+
+👥 **Gestión de Visitantes (RF001)**:
+- Registro de dos nuevos visitantes con validación de DNI único
+- Sistema previene duplicados automáticamente
+
+🔐 **Autorizaciones (RF002)**:
+- Creación de autorización entre visitante e interno
+- Selección de tipo de relación
+
+🚪 **Control de Acceso (RF003/RF004)**:
+- Ingreso de visita con validaciones automáticas
+- Egreso de visita con registro de horarios
+
+📊 **Generación de Reportes (RF007)**:
+- Creación de reportes en formato HTML
+
+💾 **Persistencia en Base de Datos**:
+- Consulta en MySQL Workbench mostrando los dos visitantes registrados
+- Evidencia de que los datos persisten correctamente en la base de datos
+
+**[▶️ Ver en YouTube](https://www.youtube.com/watch?v=8_KkTJyROW0)**
+
 ## 🎯 Estado del Proyecto
 
 ### ✅ Proyecto Completado (100% del MVP)

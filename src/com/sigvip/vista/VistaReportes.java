@@ -63,7 +63,9 @@ public class VistaReportes extends JFrame {
         this.controlador = new ControladorReportes();
         inicializarComponentes();
         configurarVentana();
-        cargarHistorial();
+
+        // Cargar historial de forma asíncrona después de que la ventana sea visible
+        SwingUtilities.invokeLater(this::cargarHistorial);
     }
 
     /**
@@ -761,9 +763,17 @@ public class VistaReportes extends JFrame {
                     List<ReporteGenerado> reportes = get();
                     actualizarTablaHistorial(reportes);
                 } catch (Exception e) {
+                    // Capturar la excepción raíz para mejor diagnóstico
+                    Throwable causa = e.getCause() != null ? e.getCause() : e;
+
                     JOptionPane.showMessageDialog(VistaReportes.this,
-                        "Error al cargar historial: " + e.getMessage(),
-                        "Error", JOptionPane.ERROR_MESSAGE);
+                        "Error al cargar historial: " + causa.getMessage() +
+                        "\n\nDetalles técnicos: " + causa.getClass().getSimpleName(),
+                        "Error al cargar Reportes", JOptionPane.ERROR_MESSAGE);
+
+                    // También imprimir en consola para debugging
+                    System.err.println("Error en cargarHistorial():");
+                    causa.printStackTrace();
                 }
             }
         };
