@@ -142,7 +142,6 @@ public class RepositorioMemoria {
         cal.set(Calendar.MINUTE, 0);
         est.setHorarioFin(cal.getTime());
 
-        est.setCapacidadMaxima(100); // Para 100 internos
         establecimientos.put(est.getIdEstablecimiento(), est);
         System.out.println("Establecimiento creado: " + est.getNombre());
     }

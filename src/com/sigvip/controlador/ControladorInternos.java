@@ -138,7 +138,6 @@ public class ControladorInternos {
         interno.setApellido(apellido.trim());
         interno.setNombre(nombre.trim());
         interno.setDni(dni.trim());
-        interno.setFechaNacimiento(fechaNacimiento);
         interno.setFechaIngreso(fechaIngreso);
         interno.setSituacionProcesal(situacionProcesal);
         interno.setPabellonActual(pabellonActual != null ? pabellonActual.trim() : null);

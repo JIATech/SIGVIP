@@ -608,7 +608,6 @@ public class VistaGestionInternos extends JFrame {
             "Legajo: %s\n" +
             "Nombre: %s\n" +
             "DNI: %s\n" +
-            "Fecha Nacimiento: %s\n" +
             "Fecha Ingreso: %s\n" +
             "Situación Procesal: %s\n" +
             "Ubicación: Pabellón %s, Piso %s\n" +
@@ -618,8 +617,6 @@ public class VistaGestionInternos extends JFrame {
             interno.getNumeroLegajo(),
             interno.getNombreCompleto(),
             interno.getDni(),
-            interno.getFechaNacimiento() != null ?
-                DATE_FORMAT.format(interno.getFechaNacimiento()) : "N/A",
             interno.getFechaIngreso() != null ?
                 DATE_FORMAT.format(interno.getFechaIngreso()) : "N/A",
             interno.getSituacionProcesal(),

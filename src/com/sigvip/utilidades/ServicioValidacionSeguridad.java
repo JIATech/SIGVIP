@@ -277,33 +277,6 @@ public class ServicioValidacionSeguridad {
                 }
             }
 
-            // PASO 6: Verificar capacidad del establecimiento
-            if (interno.getEstablecimiento() != null) {
-                Establecimiento establecimiento = establecimientoDAO.buscarPorId(
-                    interno.getEstablecimiento().getIdEstablecimiento()
-                );
-
-                if (establecimiento != null && establecimiento.getCapacidadMaxima() > 0) {
-                    int visitasEnCurso = visitaDAO.contarVisitasEnCurso();
-
-                    if (establecimiento.capacidadAlcanzada(visitasEnCurso)) {
-                        resultado.agregarError("Capacidad máxima del establecimiento alcanzada (" +
-                                              visitasEnCurso + "/" +
-                                              establecimiento.getCapacidadMaxima() + ")");
-                        return resultado;
-                    }
-
-                    // Advertencia si está cerca del límite
-                    double porcentajeOcupacion = (visitasEnCurso * 100.0) /
-                                                 establecimiento.getCapacidadMaxima();
-                    if (porcentajeOcupacion >= 80) {
-                        resultado.agregarAdvertencia("Capacidad al " + (int)porcentajeOcupacion +
-                                                    "% (" + visitasEnCurso + "/" +
-                                                    establecimiento.getCapacidadMaxima() + ")");
-                    }
-                }
-            }
-
             // Todas las validaciones pasaron
             if (autorizacion != null) {
                 resultado.agregarAdvertencia("Autorización tipo: " + autorizacion.getTipoRelacion());
