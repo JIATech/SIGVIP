@@ -88,11 +88,8 @@ public class RepositorioMemoria {
      * Si no han sido inicializados, los carga automáticamente.
      */
     private void verificarInicializacion() {
-        System.out.println("DEBUG: RepositorioMemoria.verificarInicializacion() - datosInicializados: " + datosInicializados);
         if (!datosInicializados) {
-            System.out.println("DEBUG: Inicializando datos de prueba...");
             inicializarDatosPrueba();
-            System.out.println("DEBUG: Datos inicializados. Internos: " + internos.size());
         }
     }
 
@@ -102,11 +99,8 @@ public class RepositorioMemoria {
      */
     public void inicializarDatosPrueba() {
         if (datosInicializados) {
-            System.out.println("Datos de prueba ya inicializados");
             return;
         }
-
-        System.out.println("Inicializando datos de prueba en memoria (Lisandro Olmos)...");
 
         // 1. Crear establecimiento: Unidad Nº1 - Lisandro Olmos
         crearEstablecimientoLisandroOlmos();
@@ -121,7 +115,6 @@ public class RepositorioMemoria {
         crearInternosPrueba();
 
         datosInicializados = true;
-        System.out.println("Datos de prueba cargados exitosamente");
     }
 
     /**
@@ -143,7 +136,6 @@ public class RepositorioMemoria {
         est.setHorarioFin(cal.getTime());
 
         establecimientos.put(est.getIdEstablecimiento(), est);
-        System.out.println("Establecimiento creado: " + est.getNombre());
     }
 
     /**
@@ -173,8 +165,6 @@ public class RepositorioMemoria {
         supervisor.setContrasena(Usuario.hashearContrasena("Super123!"));
         supervisor.setEstablecimiento(establecimiento);
         usuarios.put(supervisor.getIdUsuario(), supervisor);
-
-        System.out.println("3 usuarios creados (admin, operador1, supervisor1)");
     }
 
     /**
@@ -262,8 +252,6 @@ public class RepositorioMemoria {
         v10.setDomicilio("Calle 18 N° 567, Lisandro Olmos");
         v10.setTelefono("221-345-6789");
         visitantes.put(v10.getIdVisitante(), v10);
-
-        System.out.println("10 visitantes creados");
     }
 
     /**
@@ -271,10 +259,8 @@ public class RepositorioMemoria {
      * Para modo offline, creamos 10 internos representativos de los 100 totales.
      */
     private void crearInternosPrueba() {
-        System.out.println("DEBUG: Creando internos de prueba...");
         // Obtener el establecimiento Lisandro Olmos
         Establecimiento establecimiento = new ArrayList<>(establecimientos.values()).get(0);
-        System.out.println("DEBUG: Establecimiento obtenido: " + establecimiento.getNombre());
         Calendar cal = Calendar.getInstance();
 
         // 1. García, Roberto Carlos - LEG-2024-001 - Pabellón A, Piso 1, CONDENADO
@@ -287,7 +273,6 @@ public class RepositorioMemoria {
         i1.setSituacionProcesal(SituacionProcesal.CONDENADO);
         i1.setFechaIngreso(cal.getTime());
         internos.put(i1.getIdInterno(), i1);
-        System.out.println("DEBUG: Interno creado: " + i1.getNombreCompleto());
 
         // 2. Rodríguez, José Luis - LEG-2024-002 - Pabellón A, Piso 1, PROCESADO
         cal.set(2023, Calendar.FEBRUARY, 20);
@@ -387,9 +372,6 @@ public class RepositorioMemoria {
         i10.setSituacionProcesal(SituacionProcesal.CONDENADO);
         i10.setFechaIngreso(cal.getTime());
         internos.put(i10.getIdInterno(), i10);
-
-        System.out.println("DEBUG: Total internos creados: " + internos.size());
-        System.out.println("10 internos creados (muestra representativa de 100 totales)");
     }
 
     // En modo offline no creamos autorizaciones pre-cargadas
@@ -419,7 +401,6 @@ public class RepositorioMemoria {
         contadorReportes.set(1);
 
         datosInicializados = false;
-        System.out.println("🗑 Repositorio en memoria limpiado");
     }
 
     // ===== MÉTODOS CRUD PARA VISITANTES =====
@@ -529,7 +510,6 @@ public class RepositorioMemoria {
         long count = visitas.values().stream()
                 .filter(v -> v.getEstadoVisita() == EstadoVisita.EN_CURSO)
                 .count();
-        System.out.println("DEBUG: Contando visitas en curso - Total: " + count);
         return (int) count;
     }
 
@@ -549,12 +529,8 @@ public class RepositorioMemoria {
         verificarInicializacion();
         if (v.getIdVisita() != null && visitas.containsKey(v.getIdVisita())) {
             visitas.put(v.getIdVisita(), v);
-            System.out.println("DEBUG: Visita actualizada - ID: " + v.getIdVisita() +
-                             ", Estado: " + v.getEstadoVisita() +
-                             ", Hora ingreso: " + (v.getHoraIngreso() != null ? v.getHoraIngreso() : "N/A"));
             return true;
         }
-        System.out.println("DEBUG: No se pudo actualizar visita - ID: " + v.getIdVisita());
         return false;
     }
 
@@ -564,10 +540,6 @@ public class RepositorioMemoria {
         Long id = contadorAutorizaciones.getAndIncrement();
         a.setIdAutorizacion(id);
         autorizaciones.put(id, a);
-        System.out.println("DEBUG: Autorización insertada - ID: " + id +
-                         ", Visitante: " + (a.getVisitante() != null ? a.getVisitante().getNombreCompleto() : "N/A") +
-                         ", Interno: " + (a.getInterno() != null ? a.getInterno().getNombreCompleto() : "N/A") +
-                         ", Estado: " + a.getEstado());
         return id;
     }
 
@@ -577,8 +549,6 @@ public class RepositorioMemoria {
 
     public Autorizacion buscarAutorizacionVigente(Long idVisitante, Long idInterno) {
         verificarInicializacion();
-        System.out.println("DEBUG: Buscando autorización vigente - Visitante: " + idVisitante + ", Interno: " + idInterno);
-        System.out.println("DEBUG: Total autorizaciones en memoria: " + autorizaciones.size());
 
         return autorizaciones.values().stream()
                 .filter(a -> a.getVisitante() != null && a.getVisitante().getIdVisitante().equals(idVisitante))
@@ -591,7 +561,6 @@ public class RepositorioMemoria {
 
     public List<Autorizacion> listarAutorizaciones() {
         verificarInicializacion();
-        System.out.println("DEBUG: Listando autorizaciones. Total: " + autorizaciones.size());
         return new ArrayList<>(autorizaciones.values());
     }
 
@@ -664,7 +633,6 @@ public class RepositorioMemoria {
 
     public List<Restriccion> listarRestriccionesAplicables(Long idVisitante, Long idInterno) {
         verificarInicializacion();
-        System.out.println("DEBUG: Buscando restricciones aplicables - Visitante: " + idVisitante + ", Interno: " + idInterno);
 
         Date hoy = new Date();
 

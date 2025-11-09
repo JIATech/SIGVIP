@@ -117,7 +117,6 @@ public class ConexionBD {
             try {
                 if (!conexion.isClosed()) {
                     conexion.close();
-                    System.out.println("Conexión a base de datos cerrada correctamente.");
                 }
             } catch (SQLException e) {
                 System.err.println("Error al cerrar conexión: " + e.getMessage());
@@ -135,12 +134,6 @@ public class ConexionBD {
         try {
             Connection conn = getConexion();
             boolean valida = conn != null && !conn.isClosed();
-
-            if (valida) {
-                System.out.println("✓ Conexión a base de datos exitosa: " + url);
-                System.out.println("✓ Usuario: " + usuario);
-            }
-
             return valida;
 
         } catch (SQLException e) {

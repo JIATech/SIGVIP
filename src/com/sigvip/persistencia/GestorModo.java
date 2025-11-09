@@ -47,7 +47,6 @@ public class GestorModo {
      */
     public void activarModoOffline() {
         this.modoOffline = true;
-        System.out.println("🔴 MODO OFFLINE ACTIVADO - Datos en memoria RAM");
     }
 
     /**
@@ -56,7 +55,6 @@ public class GestorModo {
      */
     public void activarModoOnline() {
         this.modoOffline = false;
-        System.out.println("🟢 MODO ONLINE ACTIVADO - Conectado a MySQL");
     }
 
     /**

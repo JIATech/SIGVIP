@@ -36,7 +36,6 @@ public class Main {
         try {
             String systemLF = UIManager.getSystemLookAndFeelClassName();
             UIManager.setLookAndFeel(systemLF);
-            System.out.println("✓ Look and Feel configurado: " + UIManager.getLookAndFeel().getName());
         } catch (Exception e) {
             System.err.println("✗ Error configurando Look and Feel: " + e.getMessage());
             // Continuar con el Look and Feel por defecto
@@ -45,23 +44,13 @@ public class Main {
         // Configurar propiedades UI para consistencia
         System.setProperty("swing.boldMetal", "false");
 
-        // Imprimir información de inicio
-        System.out.println("=================================================");
-        System.out.println("  SIGVIP - Sistema de Gestión de Visitas");
-        System.out.println("  Universidad Siglo 21 - INF275");
-        System.out.println("  Version 1.0");
-        System.out.println("=================================================\n");
-
         // Verificar conexión a base de datos
-        System.out.println("Verificando conexión a base de datos...");
         ConexionBD conexionBD = ConexionBD.getInstancia();
 
         if (!conexionBD.probarConexion()) {
             // Mostrar diálogo con opciones si falla la conexión
             manejarFallaConexion();
         }
-
-        System.out.println();
 
         // Configurar Look and Feel
         configurarLookAndFeel();
@@ -90,20 +79,17 @@ public class Main {
         try {
             // Intentar usar el Look and Feel del sistema
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            System.out.println("✓ Look and Feel del sistema aplicado");
         } catch (Exception e) {
             try {
                 // Si falla, intentar usar Nimbus (más moderno que Metal)
                 for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
                     if ("Nimbus".equals(info.getName())) {
                         UIManager.setLookAndFeel(info.getClassName());
-                        System.out.println("✓ Look and Feel Nimbus aplicado");
                         return;
                     }
                 }
             } catch (Exception ex) {
                 // Si todo falla, usar el default (Metal)
-                System.out.println("⚠ Usando Look and Feel por defecto");
             }
         }
     }
@@ -114,11 +100,7 @@ public class Main {
      */
     private static void registrarHookCierre() {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            System.out.println("\n=================================================");
-            System.out.println("  Cerrando SIGVIP...");
             ConexionBD.getInstancia().cerrarConexion();
-            System.out.println("  Aplicacion finalizada correctamente");
-            System.out.println("=================================================");
         }));
     }
 
@@ -136,21 +118,17 @@ public class Main {
 
             switch (opcion) {
                 case DialogoConexionBD.REINTENTAR:
-                    System.out.println("\n🔄 Reintentando conexión a MySQL...");
                     ConexionBD conexionBD = ConexionBD.getInstancia();
                     conectado = conexionBD.probarConexion();
 
                     if (!conectado) {
                         intentos++;
-                        System.out.println("✗ Reintento fallido (" + intentos + "/" + MAX_INTENTOS + ")");
                     } else {
-                        System.out.println("✓ Conexión exitosa");
                         GestorModo.getInstancia().activarModoOnline();
                     }
                     break;
 
                 case DialogoConexionBD.CONFIGURAR:
-                    System.out.println("\n⚙ Abriendo configuración manual...");
                     boolean configuradoOK = DialogoConfigManualBD.mostrar();
 
                     if (configuradoOK) {
@@ -159,24 +137,20 @@ public class Main {
                         conectado = nuevaConexion.probarConexion();
 
                         if (conectado) {
-                            System.out.println("✓ Conexión exitosa con nueva configuración");
                             GestorModo.getInstancia().activarModoOnline();
                         } else {
-                            System.out.println("✗ Configuración manual falló");
                             intentos++;
                         }
                     }
                     break;
 
                 case DialogoConexionBD.MODO_OFFLINE:
-                    System.out.println("\n🔴 Activando MODO OFFLINE...");
                     GestorModo.getInstancia().activarModoOffline();
                     RepositorioMemoria.getInstancia().inicializarDatosPrueba();
                     return; // Salir del bucle
 
                 case DialogoConexionBD.CANCELAR:
                 default:
-                    System.out.println("\n[x] Usuario cancelo. Cerrando aplicacion...");
                     System.exit(0);
                     return;
             }

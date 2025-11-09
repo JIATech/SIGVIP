@@ -162,9 +162,6 @@ public class ServicioValidacionSeguridad {
      */
     public ResultadoValidacion validarIngresoVisita(String dniVisitante, String legajoInterno, Usuario operador) {
         ResultadoValidacion resultado = new ResultadoValidacion();
-        System.out.println("DEBUG: Iniciando validarIngresoVisita - DNI: " + dniVisitante + ", Legajo: " + legajoInterno +
-                         ", Operador: " + (operador != null ? operador.getNombreCompleto() : "N/A") +
-                         ", Rol: " + (operador != null ? operador.getRol() : "N/A"));
 
         try {
             // PASO 1: Buscar y validar visitante
@@ -209,19 +206,10 @@ public class ServicioValidacionSeguridad {
             }
 
             // PASO 4: Verificar autorización vigente
-            System.out.println("DEBUG: Buscando autorización - Visitante ID: " + visitante.getIdVisitante() +
-                             ", Interno ID: " + interno.getIdInterno());
-
             Autorizacion autorizacion = autorizacionDAO.buscarPorVisitanteInterno(
                 visitante.getIdVisitante(),
                 interno.getIdInterno()
             );
-
-            System.out.println("DEBUG: Autorización encontrada: " + (autorizacion != null ? "SI" : "NO"));
-            if (autorizacion != null) {
-                System.out.println("DEBUG: Estado autorización: " + autorizacion.getEstado());
-                System.out.println("DEBUG: Vigente: " + autorizacion.estaVigente());
-            }
 
             if (autorizacion == null) {
                 // Verificar si el operador puede autorizar inmediatamente
@@ -286,7 +274,6 @@ public class ServicioValidacionSeguridad {
             resultado.agregarAdvertencia("Interno ubicado en: " + interno.getUbicacionCompleta());
 
         } catch (SQLException e) {
-            System.out.println("DEBUG: SQLException en validarIngresoVisita: " + e.getMessage());
             e.printStackTrace();
             resultado.agregarError("Error al validar ingreso: " + e.getMessage());
         }

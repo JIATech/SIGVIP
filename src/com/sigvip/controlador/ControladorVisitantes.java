@@ -95,9 +95,6 @@ public class ControladorVisitantes {
             // Persistir en la base de datos
             Long id = visitanteDAO.insertar(visitante);
 
-            System.out.println("✓ Visitante registrado exitosamente: " +
-                             visitante.getNombreCompleto() + " (ID: " + id + ")");
-
             return id;
 
         } catch (SQLException e) {
@@ -174,10 +171,6 @@ public class ControladorVisitantes {
         try {
             boolean actualizado = visitanteDAO.actualizar(visitante);
 
-            if (actualizado) {
-                System.out.println("✓ Visitante actualizado: " + visitante.getNombreCompleto());
-            }
-
             return actualizado;
 
         } catch (SQLException e) {
@@ -213,10 +206,6 @@ public class ControladorVisitantes {
 
             visitante.setEstado(nuevoEstado);
             boolean actualizado = visitanteDAO.actualizar(visitante);
-
-            if (actualizado) {
-                System.out.println("✓ Estado del visitante cambiado a: " + nuevoEstado);
-            }
 
             return actualizado;
 
@@ -304,26 +293,10 @@ public class ControladorVisitantes {
      * @param dni DNI del visitante
      */
     public void mostrarInformacionVisitante(String dni) {
+        // Método de utilidad para debugging - sin output en producción
         Visitante visitante = buscarPorDni(dni);
-
         if (visitante == null) {
-            System.out.println("No se encontró visitante con DNI: " + dni);
             return;
         }
-
-        System.out.println("\n=== INFORMACIÓN DEL VISITANTE ===");
-        System.out.println("DNI: " + visitante.getDni());
-        System.out.println("Nombre completo: " + visitante.getNombreCompleto());
-        System.out.println("Fecha de nacimiento: " + visitante.getFechaNacimiento());
-        System.out.println("Edad: " + visitante.calcularEdad() + " años");
-        System.out.println("Teléfono: " + (visitante.getTelefono() != null ?
-                                          visitante.getTelefono() : "No especificado"));
-        System.out.println("Email: " + (visitante.getEmail() != null ?
-                                       visitante.getEmail() : "No especificado"));
-        System.out.println("Domicilio: " + (visitante.getDomicilio() != null ?
-                                           visitante.getDomicilio() : "No especificado"));
-        System.out.println("Estado: " + visitante.getEstado());
-        System.out.println("Fecha de registro: " + visitante.getFechaRegistro());
-        System.out.println("================================\n");
     }
 }

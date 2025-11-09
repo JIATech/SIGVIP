@@ -134,16 +134,11 @@ public class DialogoBusquedaInterno extends JDialog {
 
     private void cargarInternos() {
         try {
-            System.out.println("DEBUG: DialogoBusquedaInterno - Cargando internos...");
-            System.out.println("DEBUG: Modo offline: " + com.sigvip.persistencia.GestorModo.getInstancia().isModoOffline());
-
             List<Interno> internos = controlador.listarTodos();
-            System.out.println("DEBUG: Internos cargados: " + internos.size());
 
             modeloTabla.setRowCount(0);
 
             for (Interno interno : internos) {
-                System.out.println("DEBUG: Agregando interno: " + interno.getNombreCompleto());
                 Object[] fila = {
                     interno.getNumeroLegajo(),
                     interno.getApellido(),
@@ -157,16 +152,12 @@ public class DialogoBusquedaInterno extends JDialog {
                 modeloTabla.addRow(fila);
             }
 
-            System.out.println("DEBUG: Filas en tabla: " + modeloTabla.getRowCount());
-
             // Forzar actualización visual de la tabla
             modeloTabla.fireTableDataChanged();
             tablaInternos.revalidate();
             tablaInternos.repaint();
-            System.out.println("DEBUG: Forzado repintado de tabla");
 
         } catch (Exception ex) {
-            System.out.println("DEBUG: Error en cargarInternos: " + ex.getMessage());
             ex.printStackTrace();
             JOptionPane.showMessageDialog(this,
                 "Error al cargar internos: " + ex.getMessage(),

@@ -311,9 +311,6 @@ public class VistaLogin extends JFrame {
      * Abre la ventana principal tras autenticación exitosa.
      */
     private void abrirVentanaPrincipal() {
-        System.out.println("✓ Login exitoso: " + usuarioAutenticado.getNombreUsuario() +
-                         " (" + usuarioAutenticado.getRol() + ")");
-
         // Cerrar ventana de login
         dispose();
 
