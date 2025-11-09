@@ -62,8 +62,9 @@ public class VistaControlAcceso extends JFrame {
     private JTextField txtFiltroVisitas;
     private TableRowSorter<DefaultTableModel> sorterVisitas;
 
-    // Formato de fecha
+    // Formatos de fecha y hora
     private SimpleDateFormat formatoFecha = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+    private SimpleDateFormat formatoHora = new SimpleDateFormat("HH:mm");
 
     /**
      * Constructor que inicializa la vista.
@@ -671,7 +672,7 @@ public class VistaControlAcceso extends JFrame {
             fila[2] = visita.getVisitante() != null ? visita.getVisitante().getNombreCompleto() : "N/A";
             fila[3] = visita.getInterno() != null ? visita.getInterno().getNumeroLegajo() : "N/A";
             fila[4] = visita.getInterno() != null ? visita.getInterno().getNombreCompleto() : "N/A";
-            fila[5] = visita.getHoraIngreso() != null ? formatoFecha.format(visita.getHoraIngreso()) : "N/A";
+            fila[5] = visita.getHoraIngreso() != null ? formatoHora.format(visita.getHoraIngreso()) : "N/A";
             fila[6] = visita.getDuracionFormateada();
 
             modeloTabla.addRow(fila);

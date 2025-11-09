@@ -129,7 +129,11 @@ public class ControladorAcceso {
             Visita visita = new Visita(visitante, interno);
             visita.setFechaVisita(new Date());
 
-            // Insertar en base de datos
+            // PASO 4: Registrar ingreso ANTES de insertar (establece hora_ingreso y estado EN_CURSO)
+            // Esto garantiza que hora_ingreso no sea NULL al insertar (cumple constraint NOT NULL de BD)
+            visita.registrarIngreso(operador);
+
+            // Insertar en base de datos con todos los datos completos
             Long idVisita = visitaDAO.insertar(visita);
 
             if (idVisita == null) {
@@ -137,12 +141,8 @@ public class ControladorAcceso {
                 return null;
             }
 
-            // PASO 4: Registrar ingreso (cambia estado a EN_CURSO)
             visita.setIdVisita(idVisita);
-            visita.registrarIngreso(operador);
-
-            // Actualizar en base de datos
-            visitaDAO.actualizar(visita);
+            // No necesitamos actualizar porque insertamos con todos los datos completos
 
             // PASO 5: Actualizar último acceso del operador
             usuarioDAO.actualizarUltimoAcceso(operador.getIdUsuario());

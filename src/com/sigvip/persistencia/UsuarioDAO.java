@@ -83,9 +83,10 @@ public class UsuarioDAO implements IBaseDAO<Usuario> {
 
     /**
      * Busca un usuario por su ID.
+     * EAGER LOADING: Carga datos completos del establecimiento con JOINs.
      *
      * @param id identificador del usuario
-     * @return usuario encontrado o null
+     * @return usuario encontrado o null con datos completos
      * @throws SQLException si ocurre un error
      */
 @Override
@@ -95,8 +96,11 @@ public class UsuarioDAO implements IBaseDAO<Usuario> {
             return RepositorioMemoria.getInstancia().buscarUsuarioPorId(id);
         }
 
-        // MODO ONLINE: MySQL con JDBC
-        String sql = "SELECT * FROM usuarios WHERE id_usuario = ?";
+        // MODO ONLINE: MySQL con JDBC y EAGER LOADING
+        String sql = "SELECT u.*, e.nombre AS establecimiento_nombre " +
+                    "FROM usuarios u " +
+                    "LEFT JOIN establecimientos e ON u.id_establecimiento = e.id_establecimiento " +
+                    "WHERE u.id_usuario = ?";
 
         try (Connection conn = conexionBD.getConexion();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -105,7 +109,7 @@ public class UsuarioDAO implements IBaseDAO<Usuario> {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    return mapearResultSet(rs);
+                    return mapearResultSetCompleto(rs);
                 }
                 return null;
             }
@@ -116,9 +120,10 @@ public class UsuarioDAO implements IBaseDAO<Usuario> {
      * Busca un usuario por su nombre de usuario.
      * Método CRÍTICO para RF001: Autenticación y Login.
      * El nombre de usuario es UNIQUE en la base de datos.
+     * EAGER LOADING: Carga datos completos del establecimiento con JOINs.
      *
      * @param nombreUsuario username del usuario
-     * @return usuario encontrado o null
+     * @return usuario encontrado o null con datos completos
      * @throws SQLException si ocurre un error
      */
     public Usuario buscarPorNombreUsuario(String nombreUsuario) throws SQLException {
@@ -127,8 +132,11 @@ public class UsuarioDAO implements IBaseDAO<Usuario> {
             return RepositorioMemoria.getInstancia().buscarUsuarioPorNombre(nombreUsuario);
         }
 
-        // MODO ONLINE: MySQL con JDBC
-        String sql = "SELECT * FROM usuarios WHERE nombre_usuario = ?";
+        // MODO ONLINE: MySQL con JDBC y EAGER LOADING
+        String sql = "SELECT u.*, e.nombre AS establecimiento_nombre " +
+                    "FROM usuarios u " +
+                    "LEFT JOIN establecimientos e ON u.id_establecimiento = e.id_establecimiento " +
+                    "WHERE u.nombre_usuario = ?";
 
         try (Connection conn = conexionBD.getConexion();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -137,7 +145,7 @@ public class UsuarioDAO implements IBaseDAO<Usuario> {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    return mapearResultSet(rs);
+                    return mapearResultSetCompleto(rs);
                 }
                 return null;
             }
@@ -244,8 +252,9 @@ public class UsuarioDAO implements IBaseDAO<Usuario> {
 
     /**
      * Obtiene todos los usuarios registrados.
+     * EAGER LOADING: Carga datos completos del establecimiento con JOINs.
      *
-     * @return lista de todos los usuarios
+     * @return lista de todos los usuarios con datos completos
      * @throws SQLException si ocurre un error
      */
     public List<Usuario> listarTodos() throws SQLException {
@@ -254,8 +263,11 @@ public class UsuarioDAO implements IBaseDAO<Usuario> {
             return RepositorioMemoria.getInstancia().listarUsuarios();
         }
 
-        // MODO ONLINE: MySQL con JDBC
-        String sql = "SELECT * FROM usuarios ORDER BY nombre_completo";
+        // MODO ONLINE: MySQL con JDBC y EAGER LOADING
+        String sql = "SELECT u.*, e.nombre AS establecimiento_nombre " +
+                    "FROM usuarios u " +
+                    "LEFT JOIN establecimientos e ON u.id_establecimiento = e.id_establecimiento " +
+                    "ORDER BY u.nombre_completo";
         List<Usuario> usuarios = new ArrayList<>();
 
         try (Connection conn = conexionBD.getConexion();
@@ -263,7 +275,7 @@ public class UsuarioDAO implements IBaseDAO<Usuario> {
              ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
-                usuarios.add(mapearResultSet(rs));
+                usuarios.add(mapearResultSetCompleto(rs));
             }
         }
 
@@ -272,8 +284,9 @@ public class UsuarioDAO implements IBaseDAO<Usuario> {
 
     /**
      * Obtiene usuarios activos.
+     * EAGER LOADING: Carga datos completos del establecimiento con JOINs.
      *
-     * @return lista de usuarios activos
+     * @return lista de usuarios activos con datos completos
      * @throws SQLException si ocurre un error
      */
     public List<Usuario> obtenerActivos() throws SQLException {
@@ -284,8 +297,12 @@ public class UsuarioDAO implements IBaseDAO<Usuario> {
                     .collect(Collectors.toList());
         }
 
-        // MODO ONLINE: MySQL con JDBC
-        String sql = "SELECT * FROM usuarios WHERE activo = true ORDER BY nombre_completo";
+        // MODO ONLINE: MySQL con JDBC y EAGER LOADING
+        String sql = "SELECT u.*, e.nombre AS establecimiento_nombre " +
+                    "FROM usuarios u " +
+                    "LEFT JOIN establecimientos e ON u.id_establecimiento = e.id_establecimiento " +
+                    "WHERE u.activo = true " +
+                    "ORDER BY u.nombre_completo";
         List<Usuario> usuarios = new ArrayList<>();
 
         try (Connection conn = conexionBD.getConexion();
@@ -293,7 +310,7 @@ public class UsuarioDAO implements IBaseDAO<Usuario> {
              ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
-                usuarios.add(mapearResultSet(rs));
+                usuarios.add(mapearResultSetCompleto(rs));
             }
         }
 
@@ -302,9 +319,10 @@ public class UsuarioDAO implements IBaseDAO<Usuario> {
 
     /**
      * Obtiene usuarios por rol.
+     * EAGER LOADING: Carga datos completos del establecimiento con JOINs.
      *
      * @param rol rol a filtrar
-     * @return lista de usuarios con ese rol
+     * @return lista de usuarios con ese rol con datos completos
      * @throws SQLException si ocurre un error
      */
     public List<Usuario> buscarPorRol(Rol rol) throws SQLException {
@@ -315,8 +333,12 @@ public class UsuarioDAO implements IBaseDAO<Usuario> {
                     .collect(Collectors.toList());
         }
 
-        // MODO ONLINE: MySQL con JDBC
-        String sql = "SELECT * FROM usuarios WHERE rol = ? ORDER BY nombre_completo";
+        // MODO ONLINE: MySQL con JDBC y EAGER LOADING
+        String sql = "SELECT u.*, e.nombre AS establecimiento_nombre " +
+                    "FROM usuarios u " +
+                    "LEFT JOIN establecimientos e ON u.id_establecimiento = e.id_establecimiento " +
+                    "WHERE u.rol = ? " +
+                    "ORDER BY u.nombre_completo";
         List<Usuario> usuarios = new ArrayList<>();
 
         try (Connection conn = conexionBD.getConexion();
@@ -326,7 +348,7 @@ public class UsuarioDAO implements IBaseDAO<Usuario> {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    usuarios.add(mapearResultSet(rs));
+                    usuarios.add(mapearResultSetCompleto(rs));
                 }
             }
         }
@@ -336,9 +358,10 @@ public class UsuarioDAO implements IBaseDAO<Usuario> {
 
     /**
      * Obtiene usuarios por establecimiento.
+     * EAGER LOADING: Carga datos completos del establecimiento con JOINs.
      *
      * @param idEstablecimiento ID del establecimiento
-     * @return lista de usuarios del establecimiento
+     * @return lista de usuarios del establecimiento con datos completos
      * @throws SQLException si ocurre un error
      */
     public List<Usuario> buscarPorEstablecimiento(Long idEstablecimiento) throws SQLException {
@@ -350,9 +373,12 @@ public class UsuarioDAO implements IBaseDAO<Usuario> {
                     .collect(Collectors.toList());
         }
 
-        // MODO ONLINE: MySQL con JDBC
-        String sql = "SELECT * FROM usuarios WHERE id_establecimiento = ? " +
-                    "ORDER BY nombre_completo";
+        // MODO ONLINE: MySQL con JDBC y EAGER LOADING
+        String sql = "SELECT u.*, e.nombre AS establecimiento_nombre " +
+                    "FROM usuarios u " +
+                    "LEFT JOIN establecimientos e ON u.id_establecimiento = e.id_establecimiento " +
+                    "WHERE u.id_establecimiento = ? " +
+                    "ORDER BY u.nombre_completo";
         List<Usuario> usuarios = new ArrayList<>();
 
         try (Connection conn = conexionBD.getConexion();
@@ -362,7 +388,7 @@ public class UsuarioDAO implements IBaseDAO<Usuario> {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    usuarios.add(mapearResultSet(rs));
+                    usuarios.add(mapearResultSetCompleto(rs));
                 }
             }
         }
@@ -432,6 +458,51 @@ public class UsuarioDAO implements IBaseDAO<Usuario> {
                 return 0;
             }
         }
+    }
+
+    /**
+     * Mapea un ResultSet con JOIN a un objeto Usuario con datos completos.
+     * EAGER LOADING: Incluye datos completos del establecimiento.
+     *
+     * @param rs resultado de la consulta SQL con JOIN
+     * @return objeto Usuario con datos completos
+     * @throws SQLException si ocurre un error al leer el ResultSet
+     */
+    private Usuario mapearResultSetCompleto(ResultSet rs) throws SQLException {
+        Usuario usuario = new Usuario();
+
+        usuario.setIdUsuario(rs.getLong("id_usuario"));
+        usuario.setNombreUsuario(rs.getString("nombre_usuario"));
+        usuario.setContrasena(rs.getString("contrasena"));  // Hash SHA-256
+        usuario.setNombreCompleto(rs.getString("nombre_completo"));
+
+        String rolStr = rs.getString("rol");
+        if (rolStr != null) {
+            usuario.setRol(Rol.valueOf(rolStr));
+        }
+
+        // Establecimiento (EAGER LOADING - datos completos)
+        Long idEstablecimiento = rs.getLong("id_establecimiento");
+        if (!rs.wasNull()) {
+            Establecimiento establecimiento = new Establecimiento();
+            establecimiento.setIdEstablecimiento(idEstablecimiento);
+            establecimiento.setNombre(rs.getString("establecimiento_nombre"));
+            usuario.setEstablecimiento(establecimiento);
+        }
+
+        usuario.setActivo(rs.getBoolean("activo"));
+
+        Timestamp fechaCreacion = rs.getTimestamp("fecha_creacion");
+        if (fechaCreacion != null) {
+            usuario.setFechaCreacion(new java.util.Date(fechaCreacion.getTime()));
+        }
+
+        Timestamp ultimoAcceso = rs.getTimestamp("ultimo_acceso");
+        if (ultimoAcceso != null) {
+            usuario.setUltimoAcceso(new java.util.Date(ultimoAcceso.getTime()));
+        }
+
+        return usuario;
     }
 
     /**

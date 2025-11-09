@@ -180,13 +180,22 @@ public class VisitaDAO implements IBaseDAO<Visita> {
 
     /**
      * Obtiene todas las visitas registradas.
+     * EAGER LOADING: Carga datos completos de visitante e interno con JOINs.
      *
-     * @return lista de todas las visitas
+     * @return lista de todas las visitas con datos completos
      * @throws SQLException si ocurre un error
      */
     @Override
     public List<Visita> listarTodos() throws SQLException {
-        String sql = "SELECT * FROM visitas ORDER BY fecha_visita DESC, hora_ingreso DESC";
+        String sql = "SELECT v.*, " +
+                    "vis.dni AS visitante_dni, vis.apellido AS visitante_apellido, " +
+                    "vis.nombre AS visitante_nombre, vis.fecha_nacimiento AS visitante_fecha_nac, " +
+                    "i.numero_legajo, i.apellido AS interno_apellido, " +
+                    "i.nombre AS interno_nombre, i.pabellon_actual, i.piso_actual " +
+                    "FROM visitas v " +
+                    "INNER JOIN visitantes vis ON v.id_visitante = vis.id_visitante " +
+                    "INNER JOIN internos i ON v.id_interno = i.id_interno " +
+                    "ORDER BY v.fecha_visita DESC, v.hora_ingreso DESC";
         List<Visita> visitas = new ArrayList<>();
 
         try (Connection conn = conexionBD.getConexion();
@@ -194,7 +203,7 @@ public class VisitaDAO implements IBaseDAO<Visita> {
              ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
-                visitas.add(mapearResultSet(rs));
+                visitas.add(mapearResultSetCompleto(rs));
             }
         }
 
@@ -203,14 +212,23 @@ public class VisitaDAO implements IBaseDAO<Visita> {
 
     /**
      * Obtiene visitas por estado.
+     * EAGER LOADING: Carga datos completos de visitante e interno con JOINs.
      *
      * @param estado estado a filtrar
-     * @return lista de visitas con ese estado
+     * @return lista de visitas con ese estado con datos completos
      * @throws SQLException si ocurre un error
      */
     public List<Visita> buscarPorEstado(EstadoVisita estado) throws SQLException {
-        String sql = "SELECT * FROM visitas WHERE estado_visita = ? " +
-                    "ORDER BY fecha_visita DESC, hora_ingreso DESC";
+        String sql = "SELECT v.*, " +
+                    "vis.dni AS visitante_dni, vis.apellido AS visitante_apellido, " +
+                    "vis.nombre AS visitante_nombre, vis.fecha_nacimiento AS visitante_fecha_nac, " +
+                    "i.numero_legajo, i.apellido AS interno_apellido, " +
+                    "i.nombre AS interno_nombre, i.pabellon_actual, i.piso_actual " +
+                    "FROM visitas v " +
+                    "INNER JOIN visitantes vis ON v.id_visitante = vis.id_visitante " +
+                    "INNER JOIN internos i ON v.id_interno = i.id_interno " +
+                    "WHERE v.estado_visita = ? " +
+                    "ORDER BY v.fecha_visita DESC, v.hora_ingreso DESC";
         List<Visita> visitas = new ArrayList<>();
 
         try (Connection conn = conexionBD.getConexion();
@@ -220,7 +238,7 @@ public class VisitaDAO implements IBaseDAO<Visita> {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    visitas.add(mapearResultSet(rs));
+                    visitas.add(mapearResultSetCompleto(rs));
                 }
             }
         }
@@ -230,14 +248,23 @@ public class VisitaDAO implements IBaseDAO<Visita> {
 
     /**
      * Obtiene visitas por visitante.
+     * EAGER LOADING: Carga datos completos de visitante e interno con JOINs.
      *
      * @param idVisitante ID del visitante
-     * @return lista de visitas del visitante
+     * @return lista de visitas del visitante con datos completos
      * @throws SQLException si ocurre un error
      */
     public List<Visita> buscarPorVisitante(Long idVisitante) throws SQLException {
-        String sql = "SELECT * FROM visitas WHERE id_visitante = ? " +
-                    "ORDER BY fecha_visita DESC, hora_ingreso DESC";
+        String sql = "SELECT v.*, " +
+                    "vis.dni AS visitante_dni, vis.apellido AS visitante_apellido, " +
+                    "vis.nombre AS visitante_nombre, vis.fecha_nacimiento AS visitante_fecha_nac, " +
+                    "i.numero_legajo, i.apellido AS interno_apellido, " +
+                    "i.nombre AS interno_nombre, i.pabellon_actual, i.piso_actual " +
+                    "FROM visitas v " +
+                    "INNER JOIN visitantes vis ON v.id_visitante = vis.id_visitante " +
+                    "INNER JOIN internos i ON v.id_interno = i.id_interno " +
+                    "WHERE v.id_visitante = ? " +
+                    "ORDER BY v.fecha_visita DESC, v.hora_ingreso DESC";
         List<Visita> visitas = new ArrayList<>();
 
         try (Connection conn = conexionBD.getConexion();
@@ -247,7 +274,7 @@ public class VisitaDAO implements IBaseDAO<Visita> {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    visitas.add(mapearResultSet(rs));
+                    visitas.add(mapearResultSetCompleto(rs));
                 }
             }
         }
@@ -257,14 +284,23 @@ public class VisitaDAO implements IBaseDAO<Visita> {
 
     /**
      * Obtiene visitas por interno.
+     * EAGER LOADING: Carga datos completos de visitante e interno con JOINs.
      *
      * @param idInterno ID del interno
-     * @return lista de visitas al interno
+     * @return lista de visitas al interno con datos completos
      * @throws SQLException si ocurre un error
      */
     public List<Visita> buscarPorInterno(Long idInterno) throws SQLException {
-        String sql = "SELECT * FROM visitas WHERE id_interno = ? " +
-                    "ORDER BY fecha_visita DESC, hora_ingreso DESC";
+        String sql = "SELECT v.*, " +
+                    "vis.dni AS visitante_dni, vis.apellido AS visitante_apellido, " +
+                    "vis.nombre AS visitante_nombre, vis.fecha_nacimiento AS visitante_fecha_nac, " +
+                    "i.numero_legajo, i.apellido AS interno_apellido, " +
+                    "i.nombre AS interno_nombre, i.pabellon_actual, i.piso_actual " +
+                    "FROM visitas v " +
+                    "INNER JOIN visitantes vis ON v.id_visitante = vis.id_visitante " +
+                    "INNER JOIN internos i ON v.id_interno = i.id_interno " +
+                    "WHERE v.id_interno = ? " +
+                    "ORDER BY v.fecha_visita DESC, v.hora_ingreso DESC";
         List<Visita> visitas = new ArrayList<>();
 
         try (Connection conn = conexionBD.getConexion();
@@ -274,7 +310,7 @@ public class VisitaDAO implements IBaseDAO<Visita> {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    visitas.add(mapearResultSet(rs));
+                    visitas.add(mapearResultSetCompleto(rs));
                 }
             }
         }
@@ -285,8 +321,9 @@ public class VisitaDAO implements IBaseDAO<Visita> {
     /**
      * Obtiene visitas en curso (actualmente dentro del establecimiento).
      * Crítico para verificar capacidad máxima.
+     * EAGER LOADING: Carga datos completos de visitante e interno con JOINs.
      *
-     * @return lista de visitas en curso
+     * @return lista de visitas en curso con datos completos
      * @throws SQLException si ocurre un error
      */
     public List<Visita> obtenerEnCurso() throws SQLException {
@@ -295,9 +332,17 @@ public class VisitaDAO implements IBaseDAO<Visita> {
             return RepositorioMemoria.getInstancia().listarVisitasEnCurso();
         }
 
-        // MODO ONLINE: MySQL con JDBC
-        String sql = "SELECT * FROM visitas WHERE estado_visita = ? " +
-                    "ORDER BY hora_ingreso ASC";
+        // MODO ONLINE: MySQL con JDBC y EAGER LOADING
+        String sql = "SELECT v.*, " +
+                    "vis.dni AS visitante_dni, vis.apellido AS visitante_apellido, " +
+                    "vis.nombre AS visitante_nombre, vis.fecha_nacimiento AS visitante_fecha_nac, " +
+                    "i.numero_legajo, i.apellido AS interno_apellido, " +
+                    "i.nombre AS interno_nombre, i.pabellon_actual, i.piso_actual " +
+                    "FROM visitas v " +
+                    "INNER JOIN visitantes vis ON v.id_visitante = vis.id_visitante " +
+                    "INNER JOIN internos i ON v.id_interno = i.id_interno " +
+                    "WHERE v.estado_visita = ? " +
+                    "ORDER BY v.hora_ingreso ASC";
         List<Visita> visitas = new ArrayList<>();
 
         try (Connection conn = conexionBD.getConexion();
@@ -307,7 +352,7 @@ public class VisitaDAO implements IBaseDAO<Visita> {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    visitas.add(mapearResultSet(rs));
+                    visitas.add(mapearResultSetCompleto(rs));
                 }
             }
         }
@@ -317,14 +362,23 @@ public class VisitaDAO implements IBaseDAO<Visita> {
 
     /**
      * Obtiene visitas por fecha.
+     * EAGER LOADING: Carga datos completos de visitante e interno con JOINs.
      *
      * @param fecha fecha a buscar
-     * @return lista de visitas de esa fecha
+     * @return lista de visitas de esa fecha con datos completos
      * @throws SQLException si ocurre un error
      */
     public List<Visita> buscarPorFecha(java.util.Date fecha) throws SQLException {
-        String sql = "SELECT * FROM visitas WHERE fecha_visita = ? " +
-                    "ORDER BY hora_ingreso DESC";
+        String sql = "SELECT v.*, " +
+                    "vis.dni AS visitante_dni, vis.apellido AS visitante_apellido, " +
+                    "vis.nombre AS visitante_nombre, vis.fecha_nacimiento AS visitante_fecha_nac, " +
+                    "i.numero_legajo, i.apellido AS interno_apellido, " +
+                    "i.nombre AS interno_nombre, i.pabellon_actual, i.piso_actual " +
+                    "FROM visitas v " +
+                    "INNER JOIN visitantes vis ON v.id_visitante = vis.id_visitante " +
+                    "INNER JOIN internos i ON v.id_interno = i.id_interno " +
+                    "WHERE v.fecha_visita = ? " +
+                    "ORDER BY v.hora_ingreso DESC";
         List<Visita> visitas = new ArrayList<>();
 
         try (Connection conn = conexionBD.getConexion();
@@ -334,7 +388,7 @@ public class VisitaDAO implements IBaseDAO<Visita> {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    visitas.add(mapearResultSet(rs));
+                    visitas.add(mapearResultSetCompleto(rs));
                 }
             }
         }
@@ -344,17 +398,26 @@ public class VisitaDAO implements IBaseDAO<Visita> {
 
     /**
      * Obtiene visitas en un rango de fechas.
-     * Útil para reportes (RF006).
+     * Útil para reportes (RF007).
+     * EAGER LOADING: Carga datos completos de visitante e interno con JOINs.
      *
      * @param fechaInicio fecha de inicio (inclusive)
      * @param fechaFin fecha de fin (inclusive)
-     * @return lista de visitas en el rango
+     * @return lista de visitas en el rango con datos completos
      * @throws SQLException si ocurre un error
      */
     public List<Visita> buscarPorRangoFechas(java.util.Date fechaInicio,
                                              java.util.Date fechaFin) throws SQLException {
-        String sql = "SELECT * FROM visitas WHERE fecha_visita BETWEEN ? AND ? " +
-                    "ORDER BY fecha_visita DESC, hora_ingreso DESC";
+        String sql = "SELECT v.*, " +
+                    "vis.dni AS visitante_dni, vis.apellido AS visitante_apellido, " +
+                    "vis.nombre AS visitante_nombre, vis.fecha_nacimiento AS visitante_fecha_nac, " +
+                    "i.numero_legajo, i.apellido AS interno_apellido, " +
+                    "i.nombre AS interno_nombre, i.pabellon_actual, i.piso_actual " +
+                    "FROM visitas v " +
+                    "INNER JOIN visitantes vis ON v.id_visitante = vis.id_visitante " +
+                    "INNER JOIN internos i ON v.id_interno = i.id_interno " +
+                    "WHERE v.fecha_visita BETWEEN ? AND ? " +
+                    "ORDER BY v.fecha_visita DESC, v.hora_ingreso DESC";
         List<Visita> visitas = new ArrayList<>();
 
         try (Connection conn = conexionBD.getConexion();
@@ -365,7 +428,7 @@ public class VisitaDAO implements IBaseDAO<Visita> {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    visitas.add(mapearResultSet(rs));
+                    visitas.add(mapearResultSetCompleto(rs));
                 }
             }
         }
@@ -376,18 +439,27 @@ public class VisitaDAO implements IBaseDAO<Visita> {
     /**
      * Obtiene visitas de un visitante en un rango de fechas.
      * Combinación de búsqueda por visitante y rango de fechas para reportes.
+     * EAGER LOADING: Carga datos completos de visitante e interno con JOINs.
      *
      * @param idVisitante ID del visitante
      * @param fechaInicio fecha de inicio (inclusive)
      * @param fechaFin fecha de fin (inclusive)
-     * @return lista de visitas del visitante en el rango
+     * @return lista de visitas del visitante en el rango con datos completos
      * @throws SQLException si ocurre un error
      */
     public List<Visita> buscarPorVisitanteRangoFechas(Long idVisitante,
                                                      java.util.Date fechaInicio,
                                                      java.util.Date fechaFin) throws SQLException {
-        String sql = "SELECT * FROM visitas WHERE id_visitante = ? AND fecha_visita BETWEEN ? AND ? " +
-                    "ORDER BY fecha_visita DESC, hora_ingreso DESC";
+        String sql = "SELECT v.*, " +
+                    "vis.dni AS visitante_dni, vis.apellido AS visitante_apellido, " +
+                    "vis.nombre AS visitante_nombre, vis.fecha_nacimiento AS visitante_fecha_nac, " +
+                    "i.numero_legajo, i.apellido AS interno_apellido, " +
+                    "i.nombre AS interno_nombre, i.pabellon_actual, i.piso_actual " +
+                    "FROM visitas v " +
+                    "INNER JOIN visitantes vis ON v.id_visitante = vis.id_visitante " +
+                    "INNER JOIN internos i ON v.id_interno = i.id_interno " +
+                    "WHERE v.id_visitante = ? AND v.fecha_visita BETWEEN ? AND ? " +
+                    "ORDER BY v.fecha_visita DESC, v.hora_ingreso DESC";
         List<Visita> visitas = new ArrayList<>();
 
         try (Connection conn = conexionBD.getConexion();
@@ -399,7 +471,7 @@ public class VisitaDAO implements IBaseDAO<Visita> {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    visitas.add(mapearResultSet(rs));
+                    visitas.add(mapearResultSetCompleto(rs));
                 }
             }
         }
@@ -409,18 +481,27 @@ public class VisitaDAO implements IBaseDAO<Visita> {
     /**
      * Obtiene visitas de un interno en un rango de fechas.
      * Combinación de búsqueda por interno y rango de fechas para reportes.
+     * EAGER LOADING: Carga datos completos de visitante e interno con JOINs.
      *
      * @param idInterno ID del interno
      * @param fechaInicio fecha de inicio (inclusive)
      * @param fechaFin fecha de fin (inclusive)
-     * @return lista de visitas del interno en el rango
+     * @return lista de visitas del interno en el rango con datos completos
      * @throws SQLException si ocurre un error
      */
     public List<Visita> buscarPorInternoRangoFechas(Long idInterno,
                                                    java.util.Date fechaInicio,
                                                    java.util.Date fechaFin) throws SQLException {
-        String sql = "SELECT * FROM visitas WHERE id_interno = ? AND fecha_visita BETWEEN ? AND ? " +
-                    "ORDER BY fecha_visita DESC, hora_ingreso DESC";
+        String sql = "SELECT v.*, " +
+                    "vis.dni AS visitante_dni, vis.apellido AS visitante_apellido, " +
+                    "vis.nombre AS visitante_nombre, vis.fecha_nacimiento AS visitante_fecha_nac, " +
+                    "i.numero_legajo, i.apellido AS interno_apellido, " +
+                    "i.nombre AS interno_nombre, i.pabellon_actual, i.piso_actual " +
+                    "FROM visitas v " +
+                    "INNER JOIN visitantes vis ON v.id_visitante = vis.id_visitante " +
+                    "INNER JOIN internos i ON v.id_interno = i.id_interno " +
+                    "WHERE v.id_interno = ? AND v.fecha_visita BETWEEN ? AND ? " +
+                    "ORDER BY v.fecha_visita DESC, v.hora_ingreso DESC";
         List<Visita> visitas = new ArrayList<>();
 
         try (Connection conn = conexionBD.getConexion();
@@ -432,7 +513,7 @@ public class VisitaDAO implements IBaseDAO<Visita> {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    visitas.add(mapearResultSet(rs));
+                    visitas.add(mapearResultSetCompleto(rs));
                 }
             }
         }
@@ -466,6 +547,83 @@ public class VisitaDAO implements IBaseDAO<Visita> {
                 return 0;
             }
         }
+    }
+
+    /**
+     * Mapea un ResultSet con JOIN a un objeto Visita con datos completos.
+     * EAGER LOADING: Incluye datos completos de visitante e interno.
+     *
+     * @param rs resultado de la consulta SQL con JOIN
+     * @return objeto Visita con datos completos
+     * @throws SQLException si ocurre un error al leer el ResultSet
+     */
+    private Visita mapearResultSetCompleto(ResultSet rs) throws SQLException {
+        Visita visita = new Visita();
+
+        visita.setIdVisita(rs.getLong("id_visita"));
+
+        // Cargar datos COMPLETOS del visitante (eager loading)
+        Visitante visitante = new Visitante();
+        visitante.setIdVisitante(rs.getLong("id_visitante"));
+        visitante.setDni(rs.getString("visitante_dni"));
+        visitante.setApellido(rs.getString("visitante_apellido"));
+        visitante.setNombre(rs.getString("visitante_nombre"));
+
+        Date fechaNac = rs.getDate("visitante_fecha_nac");
+        if (fechaNac != null) {
+            visitante.setFechaNacimiento(new java.util.Date(fechaNac.getTime()));
+        }
+        visita.setVisitante(visitante);
+
+        // Cargar datos COMPLETOS del interno (eager loading)
+        Interno interno = new Interno();
+        interno.setIdInterno(rs.getLong("id_interno"));
+        interno.setNumeroLegajo(rs.getString("numero_legajo"));
+        interno.setApellido(rs.getString("interno_apellido"));
+        interno.setNombre(rs.getString("interno_nombre"));
+        interno.setPabellonActual(rs.getString("pabellon_actual"));
+        interno.setPisoActual(rs.getInt("piso_actual"));
+        visita.setInterno(interno);
+
+        // Fecha y horas de la visita
+        Date fechaVisita = rs.getDate("fecha_visita");
+        if (fechaVisita != null) {
+            visita.setFechaVisita(new java.util.Date(fechaVisita.getTime()));
+        }
+
+        Time horaIngreso = rs.getTime("hora_ingreso");
+        if (horaIngreso != null) {
+            visita.setHoraIngreso(new java.util.Date(horaIngreso.getTime()));
+        }
+
+        Time horaEgreso = rs.getTime("hora_egreso");
+        if (horaEgreso != null) {
+            visita.setHoraEgreso(new java.util.Date(horaEgreso.getTime()));
+        }
+
+        String estadoStr = rs.getString("estado_visita");
+        if (estadoStr != null) {
+            visita.setEstadoVisita(EstadoVisita.valueOf(estadoStr));
+        }
+
+        // Operadores (lazy loading - no los necesitamos en la tabla)
+        Long idOperadorIngreso = rs.getLong("id_operador_ingreso");
+        if (!rs.wasNull()) {
+            Usuario operador = new Usuario();
+            operador.setIdUsuario(idOperadorIngreso);
+            visita.setOperadorIngreso(operador);
+        }
+
+        Long idOperadorEgreso = rs.getLong("id_operador_egreso");
+        if (!rs.wasNull()) {
+            Usuario operador = new Usuario();
+            operador.setIdUsuario(idOperadorEgreso);
+            visita.setOperadorEgreso(operador);
+        }
+
+        visita.setObservaciones(rs.getString("observaciones"));
+
+        return visita;
     }
 
     /**

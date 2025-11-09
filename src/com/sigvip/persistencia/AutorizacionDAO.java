@@ -211,8 +211,9 @@ public class AutorizacionDAO implements IBaseDAO<Autorizacion> {
 
     /**
      * Obtiene todas las autorizaciones registradas.
+     * EAGER LOADING: Carga datos completos de visitante e interno con JOINs.
      *
-     * @return lista de todas las autorizaciones
+     * @return lista de todas las autorizaciones con datos completos
      * @throws SQLException si ocurre un error
      */
     @Override
@@ -222,8 +223,16 @@ public class AutorizacionDAO implements IBaseDAO<Autorizacion> {
             return RepositorioMemoria.getInstancia().listarAutorizaciones();
         }
 
-        // MODO ONLINE: MySQL con JDBC
-        String sql = "SELECT * FROM autorizaciones ORDER BY fecha_autorizacion DESC";
+        // MODO ONLINE: MySQL con JDBC y EAGER LOADING
+        String sql = "SELECT a.*, " +
+                    "v.dni AS visitante_dni, v.apellido AS visitante_apellido, " +
+                    "v.nombre AS visitante_nombre, v.fecha_nacimiento AS visitante_fecha_nac, " +
+                    "i.numero_legajo, i.apellido AS interno_apellido, " +
+                    "i.nombre AS interno_nombre, i.pabellon_actual, i.piso_actual " +
+                    "FROM autorizaciones a " +
+                    "INNER JOIN visitantes v ON a.id_visitante = v.id_visitante " +
+                    "INNER JOIN internos i ON a.id_interno = i.id_interno " +
+                    "ORDER BY a.fecha_autorizacion DESC";
         List<Autorizacion> autorizaciones = new ArrayList<>();
 
         try (Connection conn = conexionBD.getConexion();
@@ -231,7 +240,7 @@ public class AutorizacionDAO implements IBaseDAO<Autorizacion> {
              ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
-                autorizaciones.add(mapearResultSet(rs));
+                autorizaciones.add(mapearResultSetCompleto(rs));
             }
         }
 
@@ -241,14 +250,23 @@ public class AutorizacionDAO implements IBaseDAO<Autorizacion> {
     /**
      * Obtiene todas las autorizaciones vigentes.
      * Método para reportes y gestión.
+     * EAGER LOADING: Carga datos completos de visitante e interno con JOINs.
      *
-     * @return lista de autorizaciones vigentes
+     * @return lista de autorizaciones vigentes con datos completos
      * @throws SQLException si ocurre un error
      */
     public List<Autorizacion> obtenerVigentes() throws SQLException {
-        String sql = "SELECT * FROM autorizaciones WHERE estado = 'VIGENTE' " +
-                    "AND (fecha_vencimiento IS NULL OR fecha_vencimiento >= CURDATE()) " +
-                    "ORDER BY fecha_autorizacion DESC";
+        String sql = "SELECT a.*, " +
+                    "v.dni AS visitante_dni, v.apellido AS visitante_apellido, " +
+                    "v.nombre AS visitante_nombre, v.fecha_nacimiento AS visitante_fecha_nac, " +
+                    "i.numero_legajo, i.apellido AS interno_apellido, " +
+                    "i.nombre AS interno_nombre, i.pabellon_actual, i.piso_actual " +
+                    "FROM autorizaciones a " +
+                    "INNER JOIN visitantes v ON a.id_visitante = v.id_visitante " +
+                    "INNER JOIN internos i ON a.id_interno = i.id_interno " +
+                    "WHERE a.estado = 'VIGENTE' " +
+                    "AND (a.fecha_vencimiento IS NULL OR a.fecha_vencimiento >= CURDATE()) " +
+                    "ORDER BY a.fecha_autorizacion DESC";
         List<Autorizacion> autorizaciones = new ArrayList<>();
 
         try (Connection conn = conexionBD.getConexion();
@@ -256,7 +274,7 @@ public class AutorizacionDAO implements IBaseDAO<Autorizacion> {
              ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
-                autorizaciones.add(mapearResultSet(rs));
+                autorizaciones.add(mapearResultSetCompleto(rs));
             }
         }
         return autorizaciones;
@@ -265,14 +283,23 @@ public class AutorizacionDAO implements IBaseDAO<Autorizacion> {
     /**
      * Obtiene autorizaciones vigentes para un visitante.
      * Útil para mostrar a quién puede visitar.
+     * EAGER LOADING: Carga datos completos de visitante e interno con JOINs.
      *
      * @param idVisitante ID del visitante
-     * @return lista de autorizaciones vigentes
+     * @return lista de autorizaciones vigentes con datos completos
      * @throws SQLException si ocurre un error
      */
     public List<Autorizacion> obtenerVigentesPorVisitante(Long idVisitante) throws SQLException {
-        String sql = "SELECT * FROM autorizaciones WHERE id_visitante = ? AND estado = ? " +
-                    "ORDER BY fecha_autorizacion DESC";
+        String sql = "SELECT a.*, " +
+                    "v.dni AS visitante_dni, v.apellido AS visitante_apellido, " +
+                    "v.nombre AS visitante_nombre, v.fecha_nacimiento AS visitante_fecha_nac, " +
+                    "i.numero_legajo, i.apellido AS interno_apellido, " +
+                    "i.nombre AS interno_nombre, i.pabellon_actual, i.piso_actual " +
+                    "FROM autorizaciones a " +
+                    "INNER JOIN visitantes v ON a.id_visitante = v.id_visitante " +
+                    "INNER JOIN internos i ON a.id_interno = i.id_interno " +
+                    "WHERE a.id_visitante = ? AND a.estado = ? " +
+                    "ORDER BY a.fecha_autorizacion DESC";
         List<Autorizacion> autorizaciones = new ArrayList<>();
 
         try (Connection conn = conexionBD.getConexion();
@@ -283,7 +310,7 @@ public class AutorizacionDAO implements IBaseDAO<Autorizacion> {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    autorizaciones.add(mapearResultSet(rs));
+                    autorizaciones.add(mapearResultSetCompleto(rs));
                 }
             }
         }
@@ -294,14 +321,23 @@ public class AutorizacionDAO implements IBaseDAO<Autorizacion> {
     /**
      * Obtiene autorizaciones vigentes para un interno.
      * Útil para saber quiénes pueden visitarlo.
+     * EAGER LOADING: Carga datos completos de visitante e interno con JOINs.
      *
      * @param idInterno ID del interno
-     * @return lista de autorizaciones vigentes
+     * @return lista de autorizaciones vigentes con datos completos
      * @throws SQLException si ocurre un error
      */
     public List<Autorizacion> obtenerVigentesPorInterno(Long idInterno) throws SQLException {
-        String sql = "SELECT * FROM autorizaciones WHERE id_interno = ? AND estado = ? " +
-                    "ORDER BY fecha_autorizacion DESC";
+        String sql = "SELECT a.*, " +
+                    "v.dni AS visitante_dni, v.apellido AS visitante_apellido, " +
+                    "v.nombre AS visitante_nombre, v.fecha_nacimiento AS visitante_fecha_nac, " +
+                    "i.numero_legajo, i.apellido AS interno_apellido, " +
+                    "i.nombre AS interno_nombre, i.pabellon_actual, i.piso_actual " +
+                    "FROM autorizaciones a " +
+                    "INNER JOIN visitantes v ON a.id_visitante = v.id_visitante " +
+                    "INNER JOIN internos i ON a.id_interno = i.id_interno " +
+                    "WHERE a.id_interno = ? AND a.estado = ? " +
+                    "ORDER BY a.fecha_autorizacion DESC";
         List<Autorizacion> autorizaciones = new ArrayList<>();
 
         try (Connection conn = conexionBD.getConexion();
@@ -312,7 +348,7 @@ public class AutorizacionDAO implements IBaseDAO<Autorizacion> {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    autorizaciones.add(mapearResultSet(rs));
+                    autorizaciones.add(mapearResultSetCompleto(rs));
                 }
             }
         }
@@ -322,9 +358,10 @@ public class AutorizacionDAO implements IBaseDAO<Autorizacion> {
 
     /**
      * Obtiene autorizaciones por estado.
+     * EAGER LOADING: Carga datos completos de visitante e interno con JOINs.
      *
      * @param estado estado a filtrar
-     * @return lista de autorizaciones con ese estado
+     * @return lista de autorizaciones con ese estado con datos completos
      * @throws SQLException si ocurre un error
      */
     public List<Autorizacion> buscarPorEstado(EstadoAutorizacion estado) throws SQLException {
@@ -336,9 +373,17 @@ public class AutorizacionDAO implements IBaseDAO<Autorizacion> {
                     .collect(java.util.stream.Collectors.toList());
         }
 
-        // MODO ONLINE: MySQL con JDBC
-        String sql = "SELECT * FROM autorizaciones WHERE estado = ? " +
-                    "ORDER BY fecha_autorizacion DESC";
+        // MODO ONLINE: MySQL con JDBC y EAGER LOADING
+        String sql = "SELECT a.*, " +
+                    "v.dni AS visitante_dni, v.apellido AS visitante_apellido, " +
+                    "v.nombre AS visitante_nombre, v.fecha_nacimiento AS visitante_fecha_nac, " +
+                    "i.numero_legajo, i.apellido AS interno_apellido, " +
+                    "i.nombre AS interno_nombre, i.pabellon_actual, i.piso_actual " +
+                    "FROM autorizaciones a " +
+                    "INNER JOIN visitantes v ON a.id_visitante = v.id_visitante " +
+                    "INNER JOIN internos i ON a.id_interno = i.id_interno " +
+                    "WHERE a.estado = ? " +
+                    "ORDER BY a.fecha_autorizacion DESC";
         List<Autorizacion> autorizaciones = new ArrayList<>();
 
         try (Connection conn = conexionBD.getConexion();
@@ -348,7 +393,7 @@ public class AutorizacionDAO implements IBaseDAO<Autorizacion> {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    autorizaciones.add(mapearResultSet(rs));
+                    autorizaciones.add(mapearResultSetCompleto(rs));
                 }
             }
         }
@@ -359,17 +404,26 @@ public class AutorizacionDAO implements IBaseDAO<Autorizacion> {
     /**
      * Obtiene autorizaciones próximas a vencer.
      * Útil para alertas (RF009: Consulta de Información).
+     * EAGER LOADING: Carga datos completos de visitante e interno con JOINs.
      *
      * @param diasAntes días de anticipación para considerar "próximo a vencer"
-     * @return lista de autorizaciones próximas a vencer
+     * @return lista de autorizaciones próximas a vencer con datos completos
      * @throws SQLException si ocurre un error
      */
     public List<Autorizacion> obtenerProximasAVencer(int diasAntes) throws SQLException {
-        String sql = "SELECT * FROM autorizaciones WHERE estado = ? " +
-                    "AND fecha_vencimiento IS NOT NULL " +
-                    "AND fecha_vencimiento <= DATE_ADD(CURDATE(), INTERVAL ? DAY) " +
-                    "AND fecha_vencimiento >= CURDATE() " +
-                    "ORDER BY fecha_vencimiento ASC";
+        String sql = "SELECT a.*, " +
+                    "v.dni AS visitante_dni, v.apellido AS visitante_apellido, " +
+                    "v.nombre AS visitante_nombre, v.fecha_nacimiento AS visitante_fecha_nac, " +
+                    "i.numero_legajo, i.apellido AS interno_apellido, " +
+                    "i.nombre AS interno_nombre, i.pabellon_actual, i.piso_actual " +
+                    "FROM autorizaciones a " +
+                    "INNER JOIN visitantes v ON a.id_visitante = v.id_visitante " +
+                    "INNER JOIN internos i ON a.id_interno = i.id_interno " +
+                    "WHERE a.estado = ? " +
+                    "AND a.fecha_vencimiento IS NOT NULL " +
+                    "AND a.fecha_vencimiento <= DATE_ADD(CURDATE(), INTERVAL ? DAY) " +
+                    "AND a.fecha_vencimiento >= CURDATE() " +
+                    "ORDER BY a.fecha_vencimiento ASC";
         List<Autorizacion> autorizaciones = new ArrayList<>();
 
         try (Connection conn = conexionBD.getConexion();
@@ -380,7 +434,7 @@ public class AutorizacionDAO implements IBaseDAO<Autorizacion> {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    autorizaciones.add(mapearResultSet(rs));
+                    autorizaciones.add(mapearResultSetCompleto(rs));
                 }
             }
         }
@@ -412,6 +466,77 @@ public class AutorizacionDAO implements IBaseDAO<Autorizacion> {
                 return 0;
             }
         }
+    }
+
+    /**
+     * Mapea un ResultSet con JOIN a un objeto Autorizacion con datos completos.
+     * EAGER LOADING: Incluye datos completos de visitante e interno.
+     *
+     * @param rs resultado de la consulta SQL con JOIN
+     * @return objeto Autorizacion con datos completos
+     * @throws SQLException si ocurre un error al leer el ResultSet
+     */
+    private Autorizacion mapearResultSetCompleto(ResultSet rs) throws SQLException {
+        Autorizacion autorizacion = new Autorizacion();
+
+        autorizacion.setIdAutorizacion(rs.getLong("id_autorizacion"));
+
+        // Cargar datos COMPLETOS del visitante (eager loading)
+        Visitante visitante = new Visitante();
+        visitante.setIdVisitante(rs.getLong("id_visitante"));
+        visitante.setDni(rs.getString("visitante_dni"));
+        visitante.setApellido(rs.getString("visitante_apellido"));
+        visitante.setNombre(rs.getString("visitante_nombre"));
+
+        Date fechaNacVis = rs.getDate("visitante_fecha_nac");
+        if (fechaNacVis != null) {
+            visitante.setFechaNacimiento(new java.util.Date(fechaNacVis.getTime()));
+        }
+        autorizacion.setVisitante(visitante);
+
+        // Cargar datos COMPLETOS del interno (eager loading)
+        Interno interno = new Interno();
+        interno.setIdInterno(rs.getLong("id_interno"));
+        interno.setNumeroLegajo(rs.getString("numero_legajo"));
+        interno.setApellido(rs.getString("interno_apellido"));
+        interno.setNombre(rs.getString("interno_nombre"));
+        interno.setPabellonActual(rs.getString("pabellon_actual"));
+        interno.setPisoActual(rs.getInt("piso_actual"));
+        autorizacion.setInterno(interno);
+
+        String tipoRelacionStr = rs.getString("tipo_relacion");
+        if (tipoRelacionStr != null) {
+            autorizacion.setTipoRelacion(TipoRelacion.valueOf(tipoRelacionStr));
+        }
+
+        autorizacion.setDescripcionRelacion(rs.getString("descripcion_relacion"));
+
+        Date fechaAutorizacion = rs.getDate("fecha_autorizacion");
+        if (fechaAutorizacion != null) {
+            autorizacion.setFechaAutorizacion(new java.util.Date(fechaAutorizacion.getTime()));
+        }
+
+        Date fechaVencimiento = rs.getDate("fecha_vencimiento");
+        if (fechaVencimiento != null) {
+            autorizacion.setFechaVencimiento(new java.util.Date(fechaVencimiento.getTime()));
+        }
+
+        String estadoStr = rs.getString("estado");
+        if (estadoStr != null) {
+            autorizacion.setEstado(EstadoAutorizacion.valueOf(estadoStr));
+        }
+
+        // Usuario (lazy loading - no se muestra en tabla)
+        Long idAutorizadoPor = rs.getLong("id_autorizado_por");
+        if (!rs.wasNull()) {
+            Usuario usuario = new Usuario();
+            usuario.setIdUsuario(idAutorizadoPor);
+            autorizacion.setAutorizadoPor(usuario);
+        }
+
+        autorizacion.setObservaciones(rs.getString("observaciones"));
+
+        return autorizacion;
     }
 
     /**

@@ -185,8 +185,9 @@ public class RestriccionDAO implements IBaseDAO<Restriccion> {
 
     /**
      * Obtiene todas las restricciones registradas.
+     * EAGER LOADING: Carga datos completos del visitante con JOINs.
      *
-     * @return lista de todas las restricciones
+     * @return lista de todas las restricciones con datos completos
      * @throws SQLException si ocurre un error
      */
     public List<Restriccion> listarTodos() throws SQLException {
@@ -195,8 +196,13 @@ public class RestriccionDAO implements IBaseDAO<Restriccion> {
             return RepositorioMemoria.getInstancia().listarRestricciones();
         }
 
-        // MODO ONLINE: MySQL con JDBC
-        String sql = "SELECT * FROM restricciones ORDER BY fecha_inicio DESC";
+        // MODO ONLINE: MySQL con JDBC y EAGER LOADING
+        String sql = "SELECT r.*, " +
+                    "v.dni AS visitante_dni, v.apellido AS visitante_apellido, " +
+                    "v.nombre AS visitante_nombre, v.fecha_nacimiento AS visitante_fecha_nac " +
+                    "FROM restricciones r " +
+                    "INNER JOIN visitantes v ON r.id_visitante = v.id_visitante " +
+                    "ORDER BY r.fecha_inicio DESC";
         List<Restriccion> restricciones = new ArrayList<>();
 
         try (Connection conn = conexionBD.getConexion();
@@ -204,7 +210,7 @@ public class RestriccionDAO implements IBaseDAO<Restriccion> {
              ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
-                restricciones.add(mapearResultSet(rs));
+                restricciones.add(mapearResultSetCompleto(rs));
             }
         }
 
@@ -214,8 +220,9 @@ public class RestriccionDAO implements IBaseDAO<Restriccion> {
     /**
      * Obtiene todas las restricciones activas.
      * Método para reportes y gestión.
+     * EAGER LOADING: Carga datos completos del visitante con JOINs.
      *
-     * @return lista de restricciones activas
+     * @return lista de restricciones activas con datos completos
      * @throws SQLException si ocurre un error
      */
     public List<Restriccion> obtenerActivas() throws SQLException {
@@ -224,10 +231,15 @@ public class RestriccionDAO implements IBaseDAO<Restriccion> {
             return RepositorioMemoria.getInstancia().listarRestriccionesActivas();
         }
 
-        // MODO ONLINE: MySQL con JDBC
-        String sql = "SELECT * FROM restricciones WHERE activa = true " +
-                    "AND (fecha_fin IS NULL OR fecha_fin >= CURDATE()) " +
-                    "ORDER BY fecha_inicio DESC";
+        // MODO ONLINE: MySQL con JDBC y EAGER LOADING
+        String sql = "SELECT r.*, " +
+                    "v.dni AS visitante_dni, v.apellido AS visitante_apellido, " +
+                    "v.nombre AS visitante_nombre, v.fecha_nacimiento AS visitante_fecha_nac " +
+                    "FROM restricciones r " +
+                    "INNER JOIN visitantes v ON r.id_visitante = v.id_visitante " +
+                    "WHERE r.activa = true " +
+                    "AND (r.fecha_fin IS NULL OR r.fecha_fin >= CURDATE()) " +
+                    "ORDER BY r.fecha_inicio DESC";
         List<Restriccion> restricciones = new ArrayList<>();
 
         try (Connection conn = conexionBD.getConexion();
@@ -235,7 +247,7 @@ public class RestriccionDAO implements IBaseDAO<Restriccion> {
              ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
-                restricciones.add(mapearResultSet(rs));
+                restricciones.add(mapearResultSetCompleto(rs));
             }
         }
         return restricciones;
@@ -318,9 +330,10 @@ public class RestriccionDAO implements IBaseDAO<Restriccion> {
 
     /**
      * Obtiene todas las restricciones de un visitante (activas e inactivas).
+     * EAGER LOADING: Carga datos completos del visitante con JOINs.
      *
      * @param idVisitante ID del visitante
-     * @return lista de restricciones
+     * @return lista de restricciones con datos completos
      * @throws SQLException si ocurre un error
      */
     public List<Restriccion> buscarPorVisitante(Long idVisitante) throws SQLException {
@@ -329,9 +342,14 @@ public class RestriccionDAO implements IBaseDAO<Restriccion> {
             return RepositorioMemoria.getInstancia().buscarRestriccionesPorVisitante(idVisitante);
         }
 
-        // MODO ONLINE: MySQL con JDBC
-        String sql = "SELECT * FROM restricciones WHERE id_visitante = ? " +
-                    "ORDER BY fecha_inicio DESC";
+        // MODO ONLINE: MySQL con JDBC y EAGER LOADING
+        String sql = "SELECT r.*, " +
+                    "v.dni AS visitante_dni, v.apellido AS visitante_apellido, " +
+                    "v.nombre AS visitante_nombre, v.fecha_nacimiento AS visitante_fecha_nac " +
+                    "FROM restricciones r " +
+                    "INNER JOIN visitantes v ON r.id_visitante = v.id_visitante " +
+                    "WHERE r.id_visitante = ? " +
+                    "ORDER BY r.fecha_inicio DESC";
         List<Restriccion> restricciones = new ArrayList<>();
 
         try (Connection conn = conexionBD.getConexion();
@@ -341,7 +359,7 @@ public class RestriccionDAO implements IBaseDAO<Restriccion> {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    restricciones.add(mapearResultSet(rs));
+                    restricciones.add(mapearResultSetCompleto(rs));
                 }
             }
         }
@@ -351,9 +369,10 @@ public class RestriccionDAO implements IBaseDAO<Restriccion> {
 
     /**
      * Obtiene restricciones por tipo.
+     * EAGER LOADING: Carga datos completos del visitante con JOINs.
      *
      * @param tipo tipo de restricción
-     * @return lista de restricciones de ese tipo
+     * @return lista de restricciones de ese tipo con datos completos
      * @throws SQLException si ocurre un error
      */
     public List<Restriccion> buscarPorTipo(TipoRestriccion tipo) throws SQLException {
@@ -362,9 +381,14 @@ public class RestriccionDAO implements IBaseDAO<Restriccion> {
             return RepositorioMemoria.getInstancia().buscarRestriccionesPorTipo(tipo);
         }
 
-        // MODO ONLINE: MySQL con JDBC
-        String sql = "SELECT * FROM restricciones WHERE tipo_restriccion = ? " +
-                    "ORDER BY fecha_inicio DESC";
+        // MODO ONLINE: MySQL con JDBC y EAGER LOADING
+        String sql = "SELECT r.*, " +
+                    "v.dni AS visitante_dni, v.apellido AS visitante_apellido, " +
+                    "v.nombre AS visitante_nombre, v.fecha_nacimiento AS visitante_fecha_nac " +
+                    "FROM restricciones r " +
+                    "INNER JOIN visitantes v ON r.id_visitante = v.id_visitante " +
+                    "WHERE r.tipo_restriccion = ? " +
+                    "ORDER BY r.fecha_inicio DESC";
         List<Restriccion> restricciones = new ArrayList<>();
 
         try (Connection conn = conexionBD.getConexion();
@@ -374,7 +398,7 @@ public class RestriccionDAO implements IBaseDAO<Restriccion> {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    restricciones.add(mapearResultSet(rs));
+                    restricciones.add(mapearResultSetCompleto(rs));
                 }
             }
         }
@@ -385,10 +409,11 @@ public class RestriccionDAO implements IBaseDAO<Restriccion> {
     /**
      * Obtiene restricciones que vencen en un rango de fechas.
      * Útil para alertas de expiración.
+     * EAGER LOADING: Carga datos completos del visitante con JOINs.
      *
      * @param fechaInicio fecha de inicio del rango
      * @param fechaFin fecha de fin del rango
-     * @return lista de restricciones próximas a vencer
+     * @return lista de restricciones próximas a vencer con datos completos
      * @throws SQLException si ocurre un error
      */
     public List<Restriccion> obtenerProximasAVencer(java.util.Date fechaInicio,
@@ -398,9 +423,15 @@ public class RestriccionDAO implements IBaseDAO<Restriccion> {
             return RepositorioMemoria.getInstancia().obtenerRestriccionesProximasAVencer(fechaInicio, fechaFin);
         }
 
-        // MODO ONLINE: MySQL con JDBC
-        String sql = "SELECT * FROM restricciones WHERE activa = true " +
-                    "AND fecha_fin BETWEEN ? AND ? ORDER BY fecha_fin ASC";
+        // MODO ONLINE: MySQL con JDBC y EAGER LOADING
+        String sql = "SELECT r.*, " +
+                    "v.dni AS visitante_dni, v.apellido AS visitante_apellido, " +
+                    "v.nombre AS visitante_nombre, v.fecha_nacimiento AS visitante_fecha_nac " +
+                    "FROM restricciones r " +
+                    "INNER JOIN visitantes v ON r.id_visitante = v.id_visitante " +
+                    "WHERE r.activa = true " +
+                    "AND r.fecha_fin BETWEEN ? AND ? " +
+                    "ORDER BY r.fecha_fin ASC";
         List<Restriccion> restricciones = new ArrayList<>();
 
         try (Connection conn = conexionBD.getConexion();
@@ -411,7 +442,7 @@ public class RestriccionDAO implements IBaseDAO<Restriccion> {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    restricciones.add(mapearResultSet(rs));
+                    restricciones.add(mapearResultSetCompleto(rs));
                 }
             }
         }
@@ -445,6 +476,78 @@ public class RestriccionDAO implements IBaseDAO<Restriccion> {
             }
             return 0;
         }
+    }
+
+    /**
+     * Mapea un ResultSet con JOIN a un objeto Restriccion con datos completos.
+     * EAGER LOADING: Incluye datos completos del visitante.
+     *
+     * @param rs resultado de la consulta SQL con JOIN
+     * @return objeto Restriccion con datos completos
+     * @throws SQLException si ocurre un error al leer el ResultSet
+     */
+    private Restriccion mapearResultSetCompleto(ResultSet rs) throws SQLException {
+        Restriccion restriccion = new Restriccion();
+
+        restriccion.setIdRestriccion(rs.getLong("id_restriccion"));
+
+        // Cargar datos COMPLETOS del visitante (eager loading)
+        Visitante visitante = new Visitante();
+        visitante.setIdVisitante(rs.getLong("id_visitante"));
+        visitante.setDni(rs.getString("visitante_dni"));
+        visitante.setApellido(rs.getString("visitante_apellido"));
+        visitante.setNombre(rs.getString("visitante_nombre"));
+
+        Date fechaNac = rs.getDate("visitante_fecha_nac");
+        if (fechaNac != null) {
+            visitante.setFechaNacimiento(new java.util.Date(fechaNac.getTime()));
+        }
+        restriccion.setVisitante(visitante);
+
+        // Tipo de restricción
+        String tipoStr = rs.getString("tipo_restriccion");
+        if (tipoStr != null) {
+            restriccion.setTipoRestriccion(TipoRestriccion.valueOf(tipoStr));
+        }
+
+        restriccion.setMotivo(rs.getString("motivo"));
+
+        // Fechas
+        Date fechaInicio = rs.getDate("fecha_inicio");
+        if (fechaInicio != null) {
+            restriccion.setFechaInicio(new java.util.Date(fechaInicio.getTime()));
+        }
+
+        Date fechaFin = rs.getDate("fecha_fin");
+        if (fechaFin != null) {
+            restriccion.setFechaFin(new java.util.Date(fechaFin.getTime()));
+        }
+
+        // Aplicable a
+        String aplicableAStr = rs.getString("aplicable_a");
+        if (aplicableAStr != null) {
+            restriccion.setAplicableA(AplicableA.valueOf(aplicableAStr));
+        }
+
+        // Interno (solo si es restricción específica) - lazy loading
+        Long idInterno = rs.getLong("id_interno");
+        if (!rs.wasNull()) {
+            Interno interno = new Interno();
+            interno.setIdInterno(idInterno);
+            restriccion.setInterno(interno);
+        }
+
+        restriccion.setActivo(rs.getBoolean("activa"));
+
+        // Usuario que creó la restricción - lazy loading
+        Long idCreadoPor = rs.getLong("id_creado_por");
+        if (!rs.wasNull()) {
+            Usuario usuario = new Usuario();
+            usuario.setIdUsuario(idCreadoPor);
+            restriccion.setCreadoPor(usuario);
+        }
+
+        return restriccion;
     }
 
     /**
