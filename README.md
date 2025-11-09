@@ -378,6 +378,122 @@ Validación automática de 6 pasos críticos:
 - ✅ Tabla de visitas en curso con actualización manual (botón "Actualizar")
 - ✅ Registro de auditoría automático en base de datos
 
+## 🔌 Modo Offline
+
+SIGVIP incluye un **modo offline completo** que permite demostrar todas las funcionalidades sin conexión a MySQL.
+
+### ¿Cuándo se activa?
+
+- **Automáticamente** cuando MySQL no está disponible al iniciar la aplicación
+- Se muestra un diálogo ofreciendo dos opciones:
+  - **Modo Offline (Limitado)**: Continuar sin base de datos
+  - **Reintentar Conexión**: Intentar conectar nuevamente
+  - **Configurar Manualmente**: Ajustar parámetros de conexión
+
+### Características del Modo Offline
+
+✅ **Funcionalidades Disponibles** (8 de 10 RF):
+- RF001: Registrar Visitante
+- RF002: Autorizar Visita
+- RF003: Controlar Ingreso
+- RF004: Controlar Egreso
+- RF005: Consultar Historial
+- RF006: Gestionar Internos
+- RF008: Gestionar Usuarios
+- RF009: Registrar Restricciones
+
+⚠️ **Funcionalidades Limitadas**:
+- RF007: Generar Reportes - Los reportes HTML se generan correctamente pero NO se pueden guardar en base de datos
+
+### Almacenamiento en Memoria
+
+- **Datos volátiles**: Se almacenan en memoria RAM usando `RepositorioMemoria`
+- **Thread-safe**: Usa `ConcurrentHashMap` y `AtomicLong` para IDs
+- **Datos de prueba precargados**:
+  - 10 visitantes predefinidos
+  - 10 internos predefinidos
+  - 3 usuarios (admin, operador1, supervisor1)
+  - 1 establecimiento
+
+⚠️ **ADVERTENCIA CRÍTICA**: Todos los datos creados en modo offline **se perderán al cerrar la aplicación**.
+
+### Indicadores Visuales
+
+Cuando está en modo offline, el sistema muestra:
+- 🔴 **Banner naranja en todas las ventanas**: "⚠ MODO OFFLINE - Los datos se almacenan solo en memoria y se perderán al cerrar la aplicación"
+- 🔴 **Título del menú principal**: Incluye `[MODO OFFLINE]`
+- 🔴 **Botones deshabilitados**: Funciones incompatibles (ej: Guardar Reporte en BD)
+
+### Usuarios de Prueba (Modo Offline)
+
+| Usuario | Contraseña | Rol | Establecimiento |
+|---------|-----------|-----|-----------------|
+| `admin` | `Admin123!` | ADMINISTRADOR | Complejo Penitenciario Central |
+| `operador1` | `Opera123!` | OPERADOR | Complejo Penitenciario Central |
+| `supervisor1` | `Super123!` | SUPERVISOR | Complejo Penitenciario Central |
+
+### Cómo Probar el Modo Offline
+
+1. **Opción A - Detener MySQL**:
+   ```bash
+   # Windows
+   net stop MySQL80
+
+   # Linux/Mac
+   sudo systemctl stop mysql
+   ```
+
+2. **Opción B - Configuración inválida**:
+   - Modificar `resources/config.properties` con credenciales incorrectas
+   - Cambiar el puerto a uno inválido
+
+3. **Ejecutar la aplicación**:
+   - Aparecerá el diálogo de conexión fallida
+   - Seleccionar "Modo Offline (Limitado)"
+   - Confirmar las advertencias
+   - Login con usuarios predefinidos
+
+4. **Probar funcionalidades**:
+   - Todas las operaciones CRUD funcionan normalmente
+   - Los datos se mantienen mientras la aplicación esté abierta
+   - ⚠️ Al cerrar, todos los datos se pierden
+
+### Arquitectura Técnica
+
+```
+DAO Layer
+├── Verifica: GestorModo.isModoOffline()
+├── Si OFFLINE → RepositorioMemoria
+└── Si ONLINE  → MySQL con JDBC
+```
+
+Cada DAO implementa dual-mode:
+```java
+public Long insertar(Visitante visitante) throws SQLException {
+    // MODO OFFLINE: Usar repositorio en memoria
+    if (GestorModo.getInstancia().isModoOffline()) {
+        return RepositorioMemoria.getInstancia().insertarVisitante(visitante);
+    }
+
+    // MODO ONLINE: MySQL con JDBC
+    // ... código JDBC normal
+}
+```
+
+### Limitaciones Conocidas
+
+1. **Persistencia**: Los datos NO sobreviven al cierre de la aplicación
+2. **Reportes**: Se generan pero no se guardan en BD (botón "Guardar HTML" deshabilitado)
+3. **Auditoría**: No se registra en tabla `auditoria` (solo en modo online)
+4. **Concurrencia**: No apto para múltiples instancias simultáneas
+
+### Volver al Modo Online
+
+1. Cerrar la aplicación
+2. Iniciar MySQL
+3. Re-ejecutar la aplicación
+4. El sistema detectará MySQL y usará la base de datos normalmente
+
 ## 📊 Base de Datos
 
 **9 tablas normalizadas a 3NF**:

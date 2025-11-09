@@ -783,6 +783,10 @@ public class RepositorioMemoria {
         return false;
     }
 
+    public boolean eliminarEstablecimiento(Long id) {
+        return establecimientos.remove(id) != null;
+    }
+
     // ===== MÉTODOS CRUD PARA REPORTES =====
 
     public Long insertarReporte(ReporteGenerado r) {
@@ -798,5 +802,20 @@ public class RepositorioMemoria {
 
     public List<ReporteGenerado> listarReportes() {
         return new ArrayList<>(reportes.values());
+    }
+
+    public boolean actualizarReporte(ReporteGenerado r) {
+        if (r == null || r.getIdReporte() == null) {
+            return false;
+        }
+        if (!reportes.containsKey(r.getIdReporte())) {
+            return false;
+        }
+        reportes.put(r.getIdReporte(), r);
+        return true;
+    }
+
+    public boolean eliminarReporte(Long id) {
+        return reportes.remove(id) != null;
     }
 }

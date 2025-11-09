@@ -31,6 +31,12 @@ public class EstablecimientoDAO implements IBaseDAO<Establecimiento> {
      */
 @Override
     public Long insertar(Establecimiento establecimiento) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().insertarEstablecimiento(establecimiento);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "INSERT INTO establecimientos (nombre, nombre_visita, " +
                     "modalidad_visita, dias_habilita, horario_inicio, horario_fin, activo) " +
                     "VALUES (?, ?, ?, ?, ?, ?, ?)";
@@ -131,6 +137,12 @@ public class EstablecimientoDAO implements IBaseDAO<Establecimiento> {
      */
 @Override
     public boolean actualizar(Establecimiento establecimiento) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().actualizarEstablecimiento(establecimiento);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "UPDATE establecimientos SET nombre = ?, nombre_visita = ?, " +
                     "modalidad_visita = ?, dias_habilita = ?, horario_inicio = ?, " +
                     "horario_fin = ?, activo = ? " +
@@ -165,6 +177,12 @@ public class EstablecimientoDAO implements IBaseDAO<Establecimiento> {
      */
 @Override
     public boolean eliminar(Long id) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().eliminarEstablecimiento(id);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "DELETE FROM establecimientos WHERE id_establecimiento = ?";
 
         try (Connection conn = conexionBD.getConexion();
@@ -183,6 +201,12 @@ public class EstablecimientoDAO implements IBaseDAO<Establecimiento> {
      * @throws SQLException si ocurre un error
      */
     public List<Establecimiento> listarTodos() throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().listarEstablecimientos();
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT * FROM establecimientos ORDER BY nombre";
         List<Establecimiento> establecimientos = new ArrayList<>();
 

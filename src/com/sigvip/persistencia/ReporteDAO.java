@@ -35,6 +35,12 @@ public class ReporteDAO implements IBaseDAO<ReporteGenerado> {
      */
 @Override
     public Long insertar(ReporteGenerado reporte) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().insertarReporte(reporte);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "INSERT INTO reportes_generados (tipo_reporte, titulo, parametros_filtro, " +
                     "contenido, total_registros, id_generado_por) " +
                     "VALUES (?, ?, ?, ?, ?, ?)";
@@ -77,6 +83,12 @@ public class ReporteDAO implements IBaseDAO<ReporteGenerado> {
      */
 @Override
     public ReporteGenerado buscarPorId(Long id) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().buscarReportePorId(id);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT r.*, u.nombre_completo as nombre_generador " +
                     "FROM reportes_generados r " +
                     "LEFT JOIN usuarios u ON r.id_generado_por = u.id_usuario " +
@@ -107,6 +119,12 @@ public class ReporteDAO implements IBaseDAO<ReporteGenerado> {
      */
     @Override
     public boolean actualizar(ReporteGenerado reporte) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().actualizarReporte(reporte);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "UPDATE reportes_generados SET tipo_reporte = ?, titulo = ?, " +
                     "parametros_filtro = ?, contenido = ?, total_registros = ?, " +
                     "id_generado_por = ? WHERE id_reporte = ?";
@@ -137,6 +155,12 @@ public class ReporteDAO implements IBaseDAO<ReporteGenerado> {
      */
     @Override
     public boolean eliminar(Long id) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().eliminarReporte(id);
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "DELETE FROM reportes_generados WHERE id_reporte = ?";
 
         try (Connection conn = conexionBD.getConexion();
@@ -156,6 +180,12 @@ public class ReporteDAO implements IBaseDAO<ReporteGenerado> {
      */
     @Override
     public List<ReporteGenerado> listarTodos() throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria
+        if (GestorModo.getInstancia().isModoOffline()) {
+            return RepositorioMemoria.getInstancia().listarReportes();
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT r.*, u.nombre_completo as nombre_generador " +
                     "FROM reportes_generados r " +
                     "LEFT JOIN usuarios u ON r.id_generado_por = u.id_usuario " +
@@ -182,6 +212,19 @@ public class ReporteDAO implements IBaseDAO<ReporteGenerado> {
      * @throws SQLException si ocurre un error en la consulta
      */
     public List<ReporteGenerado> obtenerPorTipo(TipoReporte tipoReporte) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria con filtrado
+        if (GestorModo.getInstancia().isModoOffline()) {
+            List<ReporteGenerado> todos = RepositorioMemoria.getInstancia().listarReportes();
+            List<ReporteGenerado> filtrados = new ArrayList<>();
+            for (ReporteGenerado r : todos) {
+                if (r.getTipoReporte() == tipoReporte) {
+                    filtrados.add(r);
+                }
+            }
+            return filtrados;
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT r.*, u.nombre_completo as nombre_generador " +
                     "FROM reportes_generados r " +
                     "LEFT JOIN usuarios u ON r.id_generado_por = u.id_usuario " +
@@ -212,6 +255,19 @@ public class ReporteDAO implements IBaseDAO<ReporteGenerado> {
      * @throws SQLException si ocurre un error en la consulta
      */
     public List<ReporteGenerado> obtenerPorUsuario(Long idUsuario) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria con filtrado
+        if (GestorModo.getInstancia().isModoOffline()) {
+            List<ReporteGenerado> todos = RepositorioMemoria.getInstancia().listarReportes();
+            List<ReporteGenerado> filtrados = new ArrayList<>();
+            for (ReporteGenerado r : todos) {
+                if (r.getIdGeneradoPor() != null && r.getIdGeneradoPor().equals(idUsuario)) {
+                    filtrados.add(r);
+                }
+            }
+            return filtrados;
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT r.*, u.nombre_completo as nombre_generador " +
                     "FROM reportes_generados r " +
                     "LEFT JOIN usuarios u ON r.id_generado_por = u.id_usuario " +
@@ -244,6 +300,25 @@ public class ReporteDAO implements IBaseDAO<ReporteGenerado> {
      */
     public List<ReporteGenerado> obtenerPorRangoFechas(Date fechaInicio, Date fechaFin)
             throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria con filtrado por fecha
+        if (GestorModo.getInstancia().isModoOffline()) {
+            List<ReporteGenerado> todos = RepositorioMemoria.getInstancia().listarReportes();
+            List<ReporteGenerado> filtrados = new ArrayList<>();
+            for (ReporteGenerado r : todos) {
+                if (r.getFechaGeneracion() != null) {
+                    java.util.Date fecha = r.getFechaGeneracion();
+                    // Convertir java.sql.Date a java.util.Date para comparación
+                    java.util.Date inicio = new java.util.Date(fechaInicio.getTime());
+                    java.util.Date fin = new java.util.Date(fechaFin.getTime());
+                    if (!fecha.before(inicio) && !fecha.after(fin)) {
+                        filtrados.add(r);
+                    }
+                }
+            }
+            return filtrados;
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT r.*, u.nombre_completo as nombre_generador " +
                     "FROM reportes_generados r " +
                     "LEFT JOIN usuarios u ON r.id_generado_por = u.id_usuario " +
@@ -275,6 +350,23 @@ public class ReporteDAO implements IBaseDAO<ReporteGenerado> {
      * @throws SQLException si ocurre un error en la consulta
      */
     public List<ReporteGenerado> obtenerRecientes(int dias) throws SQLException {
+        // MODO OFFLINE: Usar repositorio en memoria con filtrado por fecha
+        if (GestorModo.getInstancia().isModoOffline()) {
+            // Calcular fecha límite (hace N días)
+            long tiempoLimite = System.currentTimeMillis() - (dias * 24L * 60 * 60 * 1000);
+            java.util.Date fechaLimite = new java.util.Date(tiempoLimite);
+
+            List<ReporteGenerado> todos = RepositorioMemoria.getInstancia().listarReportes();
+            List<ReporteGenerado> filtrados = new ArrayList<>();
+            for (ReporteGenerado r : todos) {
+                if (r.getFechaGeneracion() != null && !r.getFechaGeneracion().before(fechaLimite)) {
+                    filtrados.add(r);
+                }
+            }
+            return filtrados;
+        }
+
+        // MODO ONLINE: MySQL con JDBC
         String sql = "SELECT r.*, u.nombre_completo as nombre_generador " +
                     "FROM reportes_generados r " +
                     "LEFT JOIN usuarios u ON r.id_generado_por = u.id_usuario " +

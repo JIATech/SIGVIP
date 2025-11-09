@@ -104,6 +104,15 @@ public class VistaGestionUsuarios extends JFrame {
      * Inicializa todos los componentes de la interfaz.
      */
     private void inicializarComponentes() {
+        // Contenedor principal
+        JPanel contenedorCompleto = new JPanel(new BorderLayout());
+
+        // Banner de modo offline (si aplica)
+        if (com.sigvip.persistencia.GestorModo.getInstancia().isModoOffline()) {
+            JPanel bannerOffline = crearBannerModoOffline();
+            contenedorCompleto.add(bannerOffline, BorderLayout.NORTH);
+        }
+
         JPanel panelPrincipal = new JPanel(new BorderLayout(10, 10));
         panelPrincipal.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
@@ -123,7 +132,8 @@ public class VistaGestionUsuarios extends JFrame {
 
         panelPrincipal.add(splitPane, BorderLayout.CENTER);
 
-        add(panelPrincipal);
+        contenedorCompleto.add(panelPrincipal, BorderLayout.CENTER);
+        add(contenedorCompleto);
     }
 
     /**
@@ -868,5 +878,22 @@ public class VistaGestionUsuarios extends JFrame {
             JOptionPane.ERROR_MESSAGE
         );
         e.printStackTrace();
+    }
+
+    /**
+     * Crea el banner de advertencia para modo offline.
+     */
+    private JPanel crearBannerModoOffline() {
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 8));
+        panel.setBackground(new java.awt.Color(255, 152, 0));
+
+        JLabel lblAdvertencia = new JLabel(
+            "⚠ MODO OFFLINE - Los datos se almacenan solo en memoria y se perderán al cerrar la aplicación"
+        );
+        lblAdvertencia.setFont(new java.awt.Font("Arial", java.awt.Font.BOLD, 11));
+        lblAdvertencia.setForeground(java.awt.Color.WHITE);
+
+        panel.add(lblAdvertencia);
+        return panel;
     }
 }
