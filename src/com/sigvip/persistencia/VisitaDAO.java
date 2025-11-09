@@ -52,10 +52,10 @@ public class VisitaDAO implements IBaseDAO<Visita> {
             stmt.setLong(2, visita.getInterno().getIdInterno());
             stmt.setDate(3, visita.getFechaVisita() != null ?
                            new java.sql.Date(visita.getFechaVisita().getTime()) : null);
-            stmt.setTimestamp(4, visita.getHoraIngreso() != null ?
-                                new Timestamp(visita.getHoraIngreso().getTime()) : null);
-            stmt.setTimestamp(5, visita.getHoraEgreso() != null ?
-                                new Timestamp(visita.getHoraEgreso().getTime()) : null);
+            stmt.setTime(4, visita.getHoraIngreso() != null ?
+                                new Time(visita.getHoraIngreso().getTime()) : null);
+            stmt.setTime(5, visita.getHoraEgreso() != null ?
+                                new Time(visita.getHoraEgreso().getTime()) : null);
             stmt.setString(6, visita.getEstadoVisita() != null ?
                             visita.getEstadoVisita().name() : null);
             stmt.setObject(7, visita.getOperadorIngreso() != null ?
@@ -140,10 +140,10 @@ public class VisitaDAO implements IBaseDAO<Visita> {
             stmt.setLong(2, visita.getInterno().getIdInterno());
             stmt.setDate(3, visita.getFechaVisita() != null ?
                            new java.sql.Date(visita.getFechaVisita().getTime()) : null);
-            stmt.setTimestamp(4, visita.getHoraIngreso() != null ?
-                                new Timestamp(visita.getHoraIngreso().getTime()) : null);
-            stmt.setTimestamp(5, visita.getHoraEgreso() != null ?
-                                new Timestamp(visita.getHoraEgreso().getTime()) : null);
+            stmt.setTime(4, visita.getHoraIngreso() != null ?
+                                new Time(visita.getHoraIngreso().getTime()) : null);
+            stmt.setTime(5, visita.getHoraEgreso() != null ?
+                                new Time(visita.getHoraEgreso().getTime()) : null);
             stmt.setString(6, visita.getEstadoVisita() != null ?
                             visita.getEstadoVisita().name() : null);
             stmt.setObject(7, visita.getOperadorIngreso() != null ?
@@ -495,12 +495,12 @@ public class VisitaDAO implements IBaseDAO<Visita> {
             visita.setFechaVisita(new java.util.Date(fechaVisita.getTime()));
         }
 
-        Timestamp horaIngreso = rs.getTimestamp("hora_ingreso");
+        Time horaIngreso = rs.getTime("hora_ingreso");
         if (horaIngreso != null) {
             visita.setHoraIngreso(new java.util.Date(horaIngreso.getTime()));
         }
 
-        Timestamp horaEgreso = rs.getTimestamp("hora_egreso");
+        Time horaEgreso = rs.getTime("hora_egreso");
         if (horaEgreso != null) {
             visita.setHoraEgreso(new java.util.Date(horaEgreso.getTime()));
         }

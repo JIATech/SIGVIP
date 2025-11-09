@@ -64,8 +64,8 @@ public class VisitanteDAO implements IBaseDAO<Visitante> {
             stmt.setString(7, visitante.getEmail());
             stmt.setBytes(8, visitante.getFoto());
             stmt.setString(9, visitante.getEstado() != null ? visitante.getEstado().name() : null);
-            stmt.setDate(10, visitante.getFechaRegistro() != null ?
-                            new java.sql.Date(visitante.getFechaRegistro().getTime()) : null);
+            stmt.setTimestamp(10, visitante.getFechaRegistro() != null ?
+                            new Timestamp(visitante.getFechaRegistro().getTime()) : null);
 
             int filasAfectadas = stmt.executeUpdate();
 
@@ -369,7 +369,7 @@ public class VisitanteDAO implements IBaseDAO<Visitante> {
             visitante.setEstado(EstadoVisitante.valueOf(estadoStr));
         }
 
-        Date fechaRegistro = rs.getDate("fecha_registro");
+        Timestamp fechaRegistro = rs.getTimestamp("fecha_registro");
         if (fechaRegistro != null) {
             visitante.setFechaRegistro(new java.util.Date(fechaRegistro.getTime()));
         }

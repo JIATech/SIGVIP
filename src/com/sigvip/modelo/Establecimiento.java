@@ -23,13 +23,11 @@ public class Establecimiento extends EntidadBase {
     // Atributos según especificación de tabla 'establecimientos'
     private Long idEstablecimiento;
     private String nombre;
-    private String direccion;
-    private String telefono;
+    private String nombreVisita;
     private ModalidadVisita modalidadVisita;
     private String diasHabilita;  // Días separados por coma: "LUNES,MIERCOLES,VIERNES"
     private Date horarioInicio;   // Hora de inicio de visitas (solo componente TIME)
     private Date horarioFin;      // Hora de fin de visitas (solo componente TIME)
-    private int capacidadMaxima;
     // activo heredado de EntidadBase
 
     // Relaciones
@@ -239,20 +237,6 @@ public class Establecimiento extends EntidadBase {
                       .toList();
     }
 
-    /**
-     * Verifica si el establecimiento ha alcanzado su capacidad máxima.
-     *
-     * @param visitasActuales número de visitas en curso
-     * @return true si se alcanzó la capacidad máxima
-     */
-    public boolean capacidadAlcanzada(int visitasActuales) {
-        if (capacidadMaxima <= 0) {
-            return false;  // Sin límite configurado
-        }
-
-        return visitasActuales >= capacidadMaxima;
-    }
-
     // ===== IMPLEMENTACIÓN DE MÉTODOS ABSTRACTOS DE EntidadBase =====
 
     /**
@@ -335,20 +319,12 @@ public class Establecimiento extends EntidadBase {
         this.nombre = nombre;
     }
 
-    public String getDireccion() {
-        return direccion;
+    public String getNombreVisita() {
+        return nombreVisita;
     }
 
-    public void setDireccion(String direccion) {
-        this.direccion = direccion;
-    }
-
-    public String getTelefono() {
-        return telefono;
-    }
-
-    public void setTelefono(String telefono) {
-        this.telefono = telefono;
+    public void setNombreVisita(String nombreVisita) {
+        this.nombreVisita = nombreVisita;
     }
 
     public ModalidadVisita getModalidadVisita() {
@@ -381,14 +357,6 @@ public class Establecimiento extends EntidadBase {
 
     public void setHorarioFin(Date horarioFin) {
         this.horarioFin = horarioFin;
-    }
-
-    public int getCapacidadMaxima() {
-        return capacidadMaxima;
-    }
-
-    public void setCapacidadMaxima(int capacidadMaxima) {
-        this.capacidadMaxima = capacidadMaxima;
     }
 
     // isActivo() y setActivo() heredados de EntidadBase

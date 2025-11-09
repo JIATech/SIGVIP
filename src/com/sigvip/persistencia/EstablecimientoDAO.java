@@ -31,26 +31,23 @@ public class EstablecimientoDAO implements IBaseDAO<Establecimiento> {
      */
 @Override
     public Long insertar(Establecimiento establecimiento) throws SQLException {
-        String sql = "INSERT INTO establecimientos (nombre, direccion, telefono, " +
-                    "modalidad_visita, dias_habilita, horario_inicio, horario_fin, " +
-                    "capacidad_maxima, activo) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO establecimientos (nombre, nombre_visita, " +
+                    "modalidad_visita, dias_habilita, horario_inicio, horario_fin, activo) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = conexionBD.getConexion();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             stmt.setString(1, establecimiento.getNombre());
-            stmt.setString(2, establecimiento.getDireccion());
-            stmt.setString(3, establecimiento.getTelefono());
-            stmt.setString(4, establecimiento.getModalidadVisita() != null ?
+            stmt.setString(2, establecimiento.getNombreVisita());
+            stmt.setString(3, establecimiento.getModalidadVisita() != null ?
                             establecimiento.getModalidadVisita().name() : null);
-            stmt.setString(5, establecimiento.getDiasHabilita());
-            stmt.setTime(6, establecimiento.getHorarioInicio() != null ?
+            stmt.setString(4, establecimiento.getDiasHabilita());
+            stmt.setTime(5, establecimiento.getHorarioInicio() != null ?
                            new Time(establecimiento.getHorarioInicio().getTime()) : null);
-            stmt.setTime(7, establecimiento.getHorarioFin() != null ?
+            stmt.setTime(6, establecimiento.getHorarioFin() != null ?
                            new Time(establecimiento.getHorarioFin().getTime()) : null);
-            stmt.setInt(8, establecimiento.getCapacidadMaxima());
-            stmt.setBoolean(9, establecimiento.isActivo());
+            stmt.setBoolean(7, establecimiento.isActivo());
 
             int filasAfectadas = stmt.executeUpdate();
 
@@ -134,27 +131,25 @@ public class EstablecimientoDAO implements IBaseDAO<Establecimiento> {
      */
 @Override
     public boolean actualizar(Establecimiento establecimiento) throws SQLException {
-        String sql = "UPDATE establecimientos SET nombre = ?, direccion = ?, telefono = ?, " +
+        String sql = "UPDATE establecimientos SET nombre = ?, nombre_visita = ?, " +
                     "modalidad_visita = ?, dias_habilita = ?, horario_inicio = ?, " +
-                    "horario_fin = ?, capacidad_maxima = ?, activo = ? " +
+                    "horario_fin = ?, activo = ? " +
                     "WHERE id_establecimiento = ?";
 
         try (Connection conn = conexionBD.getConexion();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, establecimiento.getNombre());
-            stmt.setString(2, establecimiento.getDireccion());
-            stmt.setString(3, establecimiento.getTelefono());
-            stmt.setString(4, establecimiento.getModalidadVisita() != null ?
+            stmt.setString(2, establecimiento.getNombreVisita());
+            stmt.setString(3, establecimiento.getModalidadVisita() != null ?
                             establecimiento.getModalidadVisita().name() : null);
-            stmt.setString(5, establecimiento.getDiasHabilita());
-            stmt.setTime(6, establecimiento.getHorarioInicio() != null ?
+            stmt.setString(4, establecimiento.getDiasHabilita());
+            stmt.setTime(5, establecimiento.getHorarioInicio() != null ?
                            new Time(establecimiento.getHorarioInicio().getTime()) : null);
-            stmt.setTime(7, establecimiento.getHorarioFin() != null ?
+            stmt.setTime(6, establecimiento.getHorarioFin() != null ?
                            new Time(establecimiento.getHorarioFin().getTime()) : null);
-            stmt.setInt(8, establecimiento.getCapacidadMaxima());
-            stmt.setBoolean(9, establecimiento.isActivo());
-            stmt.setLong(10, establecimiento.getIdEstablecimiento());
+            stmt.setBoolean(7, establecimiento.isActivo());
+            stmt.setLong(8, establecimiento.getIdEstablecimiento());
 
             int filasAfectadas = stmt.executeUpdate();
             return filasAfectadas > 0;
@@ -311,8 +306,7 @@ public class EstablecimientoDAO implements IBaseDAO<Establecimiento> {
 
         establecimiento.setIdEstablecimiento(rs.getLong("id_establecimiento"));
         establecimiento.setNombre(rs.getString("nombre"));
-        establecimiento.setDireccion(rs.getString("direccion"));
-        establecimiento.setTelefono(rs.getString("telefono"));
+        establecimiento.setNombreVisita(rs.getString("nombre_visita"));
 
         String modalidadStr = rs.getString("modalidad_visita");
         if (modalidadStr != null) {
@@ -331,7 +325,6 @@ public class EstablecimientoDAO implements IBaseDAO<Establecimiento> {
             establecimiento.setHorarioFin(new java.util.Date(horarioFin.getTime()));
         }
 
-        establecimiento.setCapacidadMaxima(rs.getInt("capacidad_maxima"));
         establecimiento.setActivo(rs.getBoolean("activo"));
 
         return establecimiento;

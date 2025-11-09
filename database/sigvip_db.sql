@@ -22,8 +22,8 @@ CREATE TABLE establecimientos (
     nombre_visita VARCHAR(100),
     modalidad_visita ENUM('PRESENCIAL','SECTOR','MIXTA') DEFAULT 'SECTOR',
     dias_habilita VARCHAR(100),
-    horario_inicio TIME,
-    horario_fin TIME NOT NULL DEFAULT '16:00',
+    horario_inicio TIME NOT NULL,
+    horario_fin TIME NOT NULL,
     activo BOOLEAN DEFAULT TRUE
 ) ENGINE=InnoDB;
 
@@ -35,15 +35,16 @@ CREATE TABLE visitantes (
     dni VARCHAR(10) NOT NULL UNIQUE,
     apellido VARCHAR(100) NOT NULL,
     nombre VARCHAR(100) NOT NULL,
-    domicilio VARCHAR(255),
+    domicilio VARCHAR(500),
     telefono VARCHAR(20),
-    email VARCHAR(100),
+    email VARCHAR(254),
     fecha_nacimiento DATE NOT NULL,
     foto MEDIUMBLOB,
     estado ENUM('ACTIVO','SUSPENDIDO','INACTIVO') DEFAULT 'ACTIVO',
     fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_dni (dni),
-    INDEX idx_apellido_nombre (apellido, nombre)
+    INDEX idx_apellido_nombre (apellido, nombre),
+    INDEX idx_estado (estado)
 ) ENGINE=InnoDB;
 
 -- ============================================
@@ -59,11 +60,12 @@ CREATE TABLE internos (
     pabellon_actual VARCHAR(20) NOT NULL,
     piso_actual TINYINT NOT NULL,
     fecha_ingreso DATE NOT NULL,
-    unidad_procedencia VARCHAR(100),
+    unidad_procedencia VARCHAR(200),
     situacion_procesal ENUM('PROCESADO','CONDENADO') NOT NULL,
     estado ENUM('ACTIVO','TRASLADADO','EGRESADO') DEFAULT 'ACTIVO',
     INDEX idx_legajo (numero_legajo),
     INDEX idx_ubicacion (pabellon_actual, piso_actual),
+    INDEX idx_estado (estado),
     FOREIGN KEY (id_establecimiento) REFERENCES establecimientos(id_establecimiento)
 ) ENGINE=InnoDB;
 
@@ -94,7 +96,7 @@ CREATE TABLE autorizaciones (
     id_interno BIGINT NOT NULL,
     tipo_relacion ENUM('PADRE','MADRE','HIJO_A','HERMANO_A','CONYUGE',
                        'CONCUBINO_A','AMIGO','FAMILIAR','ABOGADO','OTRO') NOT NULL,
-    descripcion_relacion VARCHAR(100),
+    descripcion_relacion VARCHAR(255),
     fecha_autorizacion DATE NOT NULL,
     fecha_vencimiento DATE,
     estado ENUM('VIGENTE','SUSPENDIDA','REVOCADA','VENCIDA') DEFAULT 'VIGENTE',
@@ -178,7 +180,7 @@ CREATE TABLE reportes_generados (
     id_reporte BIGINT AUTO_INCREMENT PRIMARY KEY,
     tipo_reporte ENUM('VISITAS_FECHA','VISITAS_VISITANTE','VISITAS_INTERNO',
                       'ESTADISTICAS','RESTRICCIONES_ACTIVAS','AUTORIZACIONES_VIGENTES') NOT NULL,
-    titulo VARCHAR(200) NOT NULL,
+    titulo VARCHAR(300) NOT NULL,
     parametros_filtro TEXT,
     contenido LONGTEXT NOT NULL,
     total_registros INT DEFAULT 0,

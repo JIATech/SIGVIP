@@ -29,7 +29,6 @@ public class Interno extends EntidadBase {
     private String pabellonActual;
     private int pisoActual;
     private Date fechaIngreso;
-    private Date fechaNacimiento;
     private String unidadProcedencia;
     private String observaciones;
     private SituacionProcesal situacionProcesal;
@@ -279,14 +278,6 @@ public class Interno extends EntidadBase {
 
     public void setFechaIngreso(Date fechaIngreso) {
         this.fechaIngreso = fechaIngreso;
-    }
-
-    public Date getFechaNacimiento() {
-        return fechaNacimiento;
-    }
-
-    public void setFechaNacimiento(Date fechaNacimiento) {
-        this.fechaNacimiento = fechaNacimiento;
     }
 
     public String getUnidadProcedencia() {
