@@ -536,11 +536,11 @@ public class GeneradorReportes {
                 margin: 0;
                 padding: 20px;
                 background-color: #f5f5f5;
-                color: #333;
+                color: #000000;
             }
             .header {
                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
+                color: #000000;
                 padding: 30px;
                 border-radius: 10px;
                 margin-bottom: 30px;
@@ -551,11 +551,15 @@ public class GeneradorReportes {
             .header h1 {
                 margin: 0;
                 font-size: 28px;
+                font-weight: bold;
+                text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.3);
             }
             .logo {
                 font-size: 24px;
                 font-weight: bold;
-                opacity: 0.8;
+                opacity: 1.0;
+                color: #000000;
+                text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.3);
             }
             .info-filtros, .info-visitante, .info-interno, .info-periodo, .info-general {
                 background: white;
@@ -586,6 +590,7 @@ public class GeneradorReportes {
             .visitas-table td, .data-table td, .estadisticas-table td {
                 padding: 12px;
                 border-bottom: 1px solid #eee;
+                color: #000000;
             }
             .visitas-table tr:nth-child(even), .data-table tr:nth-child(even) {
                 background-color: #f8f9fa;
@@ -627,10 +632,10 @@ public class GeneradorReportes {
                 display: block;
                 font-size: 36px;
                 font-weight: bold;
-                color: #2c3e50;
+                color: #000000;
             }
             .metrica .label {
-                color: #7f8c8d;
+                color: #000000;
                 font-size: 14px;
             }
             .footer {

@@ -448,6 +448,38 @@ public class ControladorAcceso {
     }
 
     /**
+     * Busca una visita por su ID con datos completos.
+     * Carga también los datos del visitante e interno asociados.
+     *
+     * @param idVisita ID de la visita a buscar
+     * @return visita encontrada con datos completos o null si no existe
+     */
+    public Visita buscarVisitaPorId(Long idVisita) {
+        try {
+            Visita visita = visitaDAO.buscarPorId(idVisita);
+
+            if (visita != null) {
+                // Cargar datos completos del visitante
+                if (visita.getVisitante() != null && visita.getVisitante().getIdVisitante() != null) {
+                    Visitante visitanteCompleto = visitanteDAO.buscarPorId(visita.getVisitante().getIdVisitante());
+                    visita.setVisitante(visitanteCompleto);
+                }
+
+                // Cargar datos completos del interno
+                if (visita.getInterno() != null && visita.getInterno().getIdInterno() != null) {
+                    Interno internoCompleto = internoDAO.buscarPorId(visita.getInterno().getIdInterno());
+                    visita.setInterno(internoCompleto);
+                }
+            }
+
+            return visita;
+        } catch (SQLException e) {
+            System.err.println("Error al buscar visita por ID: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
      * Muestra un diálogo de confirmación para autorización inmediata.
      *
      * @param validacion resultado de la validación con los datos necesarios

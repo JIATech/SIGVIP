@@ -83,7 +83,7 @@ public class VistaReportes extends JFrame {
      */
     private Image createImageIcon(String path) {
         // En un entorno real, cargaríamos el ícono desde resources
-        // Por ahora usamos el ícono por defecto
+        // Por ahora no usamos iconos para evitar NullPointerException
         return null;
     }
 
@@ -231,7 +231,8 @@ public class VistaReportes extends JFrame {
      */
     private ImageIcon createButtonIcon(String name) {
         // Placeholder - en un entorno real cargaríamos iconos desde resources
-        return new ImageIcon();
+        // Retornamos null para evitar NullPointerException con botones deshabilitados
+        return null;
     }
 
     /**
@@ -790,8 +791,10 @@ public class VistaReportes extends JFrame {
         }
 
         // Actualizar título de la pestaña
-        JTabbedPane parent = (JTabbedPane) getContentPane().getComponent(0);
-        parent.setTitleAt(1, "Historial (" + reportes.size() + ")");
+        JTabbedPane tabbedPane = encontrarTabbedPane();
+        if (tabbedPane != null) {
+            tabbedPane.setTitleAt(1, "Historial (" + reportes.size() + ")");
+        }
     }
 
     /**
@@ -844,13 +847,18 @@ public class VistaReportes extends JFrame {
             ReporteGenerado reporte = controlador.buscarReportePorId(idReporte);
             if (reporte != null) {
                 // Cambiar a la pestaña de generación
-                JTabbedPane parent = (JTabbedPane) getContentPane().getComponent(0);
-                parent.setSelectedIndex(0);
+                JTabbedPane tabbedPane = encontrarTabbedPane();
+                if (tabbedPane != null) {
+                    tabbedPane.setSelectedIndex(0);
+                }
 
                 // Mostrar el reporte
                 mostrarReporte(reporte);
                 btnImprimir.setEnabled(true);
-                btnGuardar.setEnabled(true);
+                // Solo habilitar guardar si NO estamos en modo offline
+                if (!com.sigvip.persistencia.GestorModo.getInstancia().isModoOffline()) {
+                    btnGuardar.setEnabled(true);
+                }
             } else {
                 JOptionPane.showMessageDialog(this,
                     "No se encontró el reporte seleccionado",
@@ -1007,6 +1015,39 @@ public class VistaReportes extends JFrame {
         };
 
         worker.execute();
+    }
+
+    /**
+     * Encuentra el JTabbedPane navegando la estructura de componentes.
+     * Funciona tanto con estructura antigua como con banners offline.
+     */
+    private JTabbedPane encontrarTabbedPane() {
+        Component contentPane = getContentPane().getComponent(0);
+
+        // Estructura con banner (offline)
+        if (contentPane instanceof JPanel) {
+            JPanel contenedorCompleto = (JPanel) contentPane;
+            if (contenedorCompleto.getLayout() instanceof BorderLayout) {
+                Component centerComponent = ((BorderLayout)contenedorCompleto.getLayout())
+                    .getLayoutComponent(BorderLayout.CENTER);
+
+                if (centerComponent instanceof JPanel) {
+                    JPanel panelPrincipal = (JPanel) centerComponent;
+                    for (Component comp : panelPrincipal.getComponents()) {
+                        if (comp instanceof JTabbedPane) {
+                            return (JTabbedPane) comp;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Estructura antigua (online) - fallback
+        if (contentPane instanceof JTabbedPane) {
+            return (JTabbedPane) contentPane;
+        }
+
+        return null;
     }
 
     /**

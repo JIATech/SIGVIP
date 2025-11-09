@@ -53,8 +53,10 @@ public class VistaControlAcceso extends JFrame {
 
     // Componentes de egreso
     private JTextField txtIdVisita;
+    private JButton btnBuscarVisita;
     private JTextArea txtObservaciones;
     private JButton btnRegistrarEgreso;
+    private JTextArea txtDetallesVisita;
 
     // Tabla de visitas en curso
     private JTable tablaVisitas;
@@ -306,18 +308,52 @@ public class VistaControlAcceso extends JFrame {
     }
 
     /**
-     * Crea el panel de registro de egreso (RF004).
+     * Crea el panel de registro de egreso (RF004) con mejoras de UX.
      */
     private JPanel crearPanelEgreso() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
-        // Panel de formulario
+        // Panel de información con instrucciones mejoradas
+        JPanel panelInfo = new JPanel(new BorderLayout());
+        panelInfo.setBackground(TemaColors.FONDO_PANEL);
+        panelInfo.setBorder(BorderFactory.createTitledBorder(
+            BorderFactory.createLineBorder(TemaColors.PRIMARIO, 1),
+            "Información",
+            0,
+            0,
+            new Font("Arial", Font.BOLD, 12),
+            TemaColors.PRIMARIO
+        ));
+
+        JTextArea txtInfo = new JTextArea(
+            "RF004: Control de Egreso con Selección Inteligente\n\n" +
+            "Formas de seleccionar una visita para egreso:\n" +
+            "1. Use el botón 'Buscar Visita Activa' para búsqueda avanzada\n" +
+            "2. Doble click en una visita desde la pestaña 'Visitas en Curso'\n" +
+            "3. Ingrese manualmente el ID si lo conoce\n\n" +
+            "El sistema validará automáticamente que la visita esté activa"
+        );
+        txtInfo.setEditable(false);
+        txtInfo.setBackground(TemaColors.FONDO_PANEL);
+        txtInfo.setForeground(TemaColors.TEXTO_PRIMARIO);
+        txtInfo.setFont(new Font("Arial", Font.PLAIN, 11));
+        txtInfo.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        txtInfo.setLineWrap(true);
+        txtInfo.setWrapStyleWord(true);
+
+        JScrollPane scrollInfo = new JScrollPane(txtInfo);
+        scrollInfo.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollInfo.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollInfo.setPreferredSize(new Dimension(850, 100));
+        panelInfo.add(scrollInfo, BorderLayout.CENTER);
+
+        // Panel de formulario mejorado
         JPanel panelFormulario = new JPanel(new GridBagLayout());
         panelFormulario.setBackground(TemaColors.FONDO_PANEL);
         panelFormulario.setBorder(BorderFactory.createTitledBorder(
             BorderFactory.createLineBorder(TemaColors.PRIMARIO, 1),
-            "Registrar Egreso",
+            "Datos del Egreso",
             0,
             0,
             new Font("Arial", Font.BOLD, 12),
@@ -327,7 +363,7 @@ public class VistaControlAcceso extends JFrame {
         gbc.insets = new Insets(8, 8, 8, 8);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // ID Visita
+        // ID Visita con botón de búsqueda
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.weightx = 0.3;
@@ -337,7 +373,7 @@ public class VistaControlAcceso extends JFrame {
         panelFormulario.add(lblIdVisita, gbc);
 
         gbc.gridx = 1;
-        gbc.weightx = 0.7;
+        gbc.weightx = 0.5;
         txtIdVisita = new JTextField(20);
         txtIdVisita.setBackground(Color.WHITE);
         txtIdVisita.setBorder(BorderFactory.createCompoundBorder(
@@ -345,13 +381,27 @@ public class VistaControlAcceso extends JFrame {
             BorderFactory.createEmptyBorder(5, 8, 5, 8)
         ));
         txtIdVisita.setFont(new Font("Arial", Font.PLAIN, 12));
-        txtIdVisita.setToolTipText("Ingrese el ID de la visita a finalizar");
+        txtIdVisita.setToolTipText("Ingrese el ID de la visita a finalizar o use 'Buscar Visita Activa'");
+        // Listener para cargar detalles cuando se ingrese un ID manualmente
+        txtIdVisita.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { actualizarDetallesVisita(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { actualizarDetallesVisita(); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { actualizarDetallesVisita(); }
+        });
         panelFormulario.add(txtIdVisita, gbc);
+
+        gbc.gridx = 2;
+        gbc.weightx = 0.2;
+        btnBuscarVisita = new JButton("Buscar Visita Activa");
+        btnBuscarVisita.setPreferredSize(new Dimension(180, 30));
+        TemaColors.aplicarEstiloBoton(btnBuscarVisita, Color.WHITE);
+        btnBuscarVisita.addActionListener(e -> buscarVisitaParaEgreso());
+        panelFormulario.add(btnBuscarVisita, gbc);
 
         // Observaciones
         gbc.gridx = 0;
         gbc.gridy = 1;
-        gbc.gridwidth = 2;
+        gbc.gridwidth = 3;
         JLabel lblObservaciones = new JLabel("Observaciones (opcional):");
         lblObservaciones.setFont(new Font("Arial", Font.BOLD, 12));
         lblObservaciones.setForeground(TemaColors.TEXTO_PRIMARIO);
@@ -377,11 +427,41 @@ public class VistaControlAcceso extends JFrame {
         gbc.anchor = GridBagConstraints.CENTER;
         btnRegistrarEgreso = new JButton("Registrar Egreso");
         btnRegistrarEgreso.setPreferredSize(new Dimension(200, 35));
-        TemaColors.aplicarEstiloBotonPeligro(btnRegistrarEgreso); // Ahora será blanco con borde negro
+        btnRegistrarEgreso.setEnabled(false); // Deshabilitado hasta que se seleccione una visita válida
+        TemaColors.aplicarEstiloBotonPeligro(btnRegistrarEgreso);
         btnRegistrarEgreso.addActionListener(e -> registrarEgreso());
         panelFormulario.add(btnRegistrarEgreso, gbc);
 
-        panel.add(panelFormulario, BorderLayout.NORTH);
+        // Panel de detalles de la visita seleccionada
+        JPanel panelDetalles = new JPanel(new BorderLayout());
+        panelDetalles.setBackground(TemaColors.FONDO_PANEL);
+        panelDetalles.setBorder(BorderFactory.createTitledBorder(
+            BorderFactory.createLineBorder(TemaColors.PRIMARIO, 1),
+            "Detalles de la Visita Seleccionada",
+            0,
+            0,
+            new Font("Arial", Font.BOLD, 12),
+            TemaColors.PRIMARIO
+        ));
+
+        txtDetallesVisita = new JTextArea(6, 40);
+        txtDetallesVisita.setEditable(false);
+        txtDetallesVisita.setBackground(Color.WHITE);
+        txtDetallesVisita.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        txtDetallesVisita.setFont(new Font("Monospaced", Font.PLAIN, 11));
+        txtDetallesVisita.setForeground(TemaColors.TEXTO_SECUNDARIO);
+        txtDetallesVisita.setText("Seleccione una visita para ver sus detalles aquí...");
+
+        JScrollPane scrollDetalles = new JScrollPane(txtDetallesVisita);
+        panelDetalles.add(scrollDetalles, BorderLayout.CENTER);
+
+        // Ensamblar paneles
+        JPanel panelSuperior = new JPanel(new GridLayout(2, 1, 10, 10));
+        panelSuperior.add(panelInfo);
+        panelSuperior.add(panelFormulario);
+
+        panel.add(panelSuperior, BorderLayout.NORTH);
+        panel.add(panelDetalles, BorderLayout.CENTER);
 
         return panel;
     }
@@ -498,28 +578,93 @@ public class VistaControlAcceso extends JFrame {
         scrollPane.setBackground(TemaColors.FONDO_PANEL);
         panel.add(scrollPane, BorderLayout.CENTER);
 
-        // Panel de información
-        JPanel panelInfo = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        // Panel de información mejorado
+        JPanel panelInfo = new JPanel(new BorderLayout());
         panelInfo.setBackground(TemaColors.FONDO_PANEL);
-        JLabel lblInfo = new JLabel("Doble click en una fila para usar su ID en el egreso");
-        lblInfo.setFont(new Font("Arial", Font.ITALIC, 11));
-        lblInfo.setForeground(TemaColors.TEXTO_SECUNDARIO);
-        panelInfo.add(lblInfo);
+        panelInfo.setBorder(BorderFactory.createTitledBorder(
+            BorderFactory.createLineBorder(TemaColors.PRIMARIO, 1),
+            "Instrucciones",
+            0,
+            0,
+            new Font("Arial", Font.BOLD, 12),
+            TemaColors.PRIMARIO
+        ));
+
+        JTextArea txtInfoTabla = new JTextArea(
+            "• Doble click en una visita para cargarla automáticamente en el formulario de egreso\n" +
+            "• Use el campo de filtro para buscar por DNI, nombre de visitante o datos del interno\n" +
+            "• Solo se muestran visitas con estado 'EN_CURSO' para poder registrar su egreso\n" +
+            "• La tabla se actualiza automáticamente después de cada registro de egreso"
+        );
+        txtInfoTabla.setEditable(false);
+        txtInfoTabla.setBackground(TemaColors.FONDO_PANEL);
+        txtInfoTabla.setForeground(TemaColors.TEXTO_SECUNDARIO);
+        txtInfoTabla.setFont(new Font("Arial", Font.PLAIN, 11));
+        txtInfoTabla.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+        txtInfoTabla.setLineWrap(true);
+        txtInfoTabla.setWrapStyleWord(true);
+
+        panelInfo.add(txtInfoTabla, BorderLayout.CENTER);
         panel.add(panelInfo, BorderLayout.SOUTH);
 
-        // Listener para doble click
+        // Listener para doble click - mejorado con validación automática
         tablaVisitas.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 if (evt.getClickCount() == 2) {
                     int row = tablaVisitas.getSelectedRow();
                     if (row >= 0) {
-                        String id = modeloTabla.getValueAt(row, 0).toString();
-                        txtIdVisita.setText(id);
-                        // Cambiar a la pestaña de egreso
-                        JPanel panelPrincipal = (JPanel) VistaControlAcceso.this
-                            .getContentPane().getComponent(0);
-                        JTabbedPane tabbedPane = (JTabbedPane) panelPrincipal.getComponent(0);
-                        tabbedPane.setSelectedIndex(1);
+                        try {
+                            // Obtener ID y buscar visita completa
+                            String id = modeloTabla.getValueAt(row, 0).toString();
+                            Long idVisita = Long.parseLong(id);
+                            Visita visita = controlador.buscarVisitaPorId(idVisita);
+
+                            if (visita != null) {
+                                // Cargar visita en el formulario de egreso
+                                txtIdVisita.setText(id);
+                                mostrarDetallesVisitaSeleccionada(visita);
+
+                                // Cambiar a la pestaña de egreso
+                                JPanel contenedorCompleto = (JPanel) getContentPane().getComponent(0);
+                                JPanel panelPrincipal;
+
+                                if (contenedorCompleto.getLayout() instanceof BorderLayout) {
+                                    Component centerComponent = ((BorderLayout)contenedorCompleto.getLayout())
+                                        .getLayoutComponent(BorderLayout.CENTER);
+                                    panelPrincipal = (JPanel) centerComponent;
+                                } else {
+                                    panelPrincipal = contenedorCompleto;
+                                }
+
+                                Component tabbedPaneComponent = ((BorderLayout)panelPrincipal.getLayout())
+                                    .getLayoutComponent(BorderLayout.CENTER);
+                                JTabbedPane tabbedPane = (JTabbedPane) tabbedPaneComponent;
+                                tabbedPane.setSelectedIndex(1); // Índice 1 = Registrar Egreso
+
+                                // Mostrar confirmación
+                                JOptionPane.showMessageDialog(VistaControlAcceso.this,
+                                    "Visita cargada para egreso:\n\n" +
+                                    "ID: " + visita.getIdVisita() + "\n" +
+                                    "Visitante: " + (visita.getVisitante() != null ?
+                                        visita.getVisitante().getNombreCompleto() : "N/A") + "\n" +
+                                    "Interno: " + (visita.getInterno() != null ?
+                                        visita.getInterno().getNombreCompleto() : "N/A") + "\n" +
+                                    "Ingreso: " + (visita.getHoraIngreso() != null ?
+                                        formatoHora.format(visita.getHoraIngreso()) : "N/A"),
+                                    "Visita Seleccionada",
+                                    JOptionPane.INFORMATION_MESSAGE);
+                            } else {
+                                JOptionPane.showMessageDialog(VistaControlAcceso.this,
+                                    "No se pudo cargar la visita seleccionada",
+                                    "Error",
+                                    JOptionPane.ERROR_MESSAGE);
+                            }
+                        } catch (NumberFormatException e) {
+                            JOptionPane.showMessageDialog(VistaControlAcceso.this,
+                                "ID de visita inválido",
+                                "Error",
+                                JOptionPane.ERROR_MESSAGE);
+                        }
                     }
                 }
             }
@@ -599,7 +744,7 @@ public class VistaControlAcceso extends JFrame {
     }
 
     /**
-     * Registra el egreso de un visitante (RF004).
+     * Registra el egreso de un visitante (RF004) con confirmación mejorada.
      */
     private void registrarEgreso() {
         String idVisitaStr = txtIdVisita.getText().trim();
@@ -607,7 +752,7 @@ public class VistaControlAcceso extends JFrame {
 
         // Validar ID
         if (idVisitaStr.isEmpty()) {
-            mostrarError("Ingrese el ID de la visita");
+            mostrarError("Seleccione una visita para registrar el egreso");
             return;
         }
 
@@ -616,6 +761,69 @@ public class VistaControlAcceso extends JFrame {
             idVisita = Long.parseLong(idVisitaStr);
         } catch (NumberFormatException e) {
             mostrarError("ID de visita inválido");
+            return;
+        }
+
+        // Obtener detalles de la visita para la confirmación
+        Visita visita = controlador.buscarVisitaPorId(idVisita);
+        if (visita == null) {
+            mostrarError("No se encontró la visita seleccionada");
+            return;
+        }
+
+        if (visita.getEstadoVisita().toString().equals("EN_CURSO")) {
+            // Construir mensaje de confirmación detallado
+            StringBuilder mensajeConfirmacion = new StringBuilder();
+            mensajeConfirmacion.append("¿Confirmar el egreso de la siguiente visita?\n\n");
+            mensajeConfirmacion.append("ID Visita: ").append(visita.getIdVisita()).append("\n");
+            mensajeConfirmacion.append("─────────────────────────────────────\n");
+
+            if (visita.getVisitante() != null) {
+                Visitante v = visita.getVisitante();
+                mensajeConfirmacion.append("VISITANTE:\n");
+                mensajeConfirmacion.append("  Nombre: ").append(v.getNombreCompleto()).append("\n");
+                mensajeConfirmacion.append("  DNI: ").append(v.getDni()).append("\n");
+            }
+
+            mensajeConfirmacion.append("\n");
+
+            if (visita.getInterno() != null) {
+                Interno i = visita.getInterno();
+                mensajeConfirmacion.append("INTERNO:\n");
+                mensajeConfirmacion.append("  Nombre: ").append(i.getNombreCompleto()).append("\n");
+                mensajeConfirmacion.append("  Legajo: ").append(i.getNumeroLegajo()).append("\n");
+                mensajeConfirmacion.append("  Ubicación: Pab. ").append(i.getPabellonActual())
+                        .append(" - Piso ").append(i.getPisoActual()).append("\n");
+            }
+
+            mensajeConfirmacion.append("\n");
+            mensajeConfirmacion.append("DETALLES DE LA VISITA:\n");
+            mensajeConfirmacion.append("  Fecha: ").append(formatoFecha.format(visita.getFechaVisita())).append("\n");
+            mensajeConfirmacion.append("  Hora Ingreso: ").append(visita.getHoraIngreso() != null ?
+                formatoHora.format(visita.getHoraIngreso()) : "N/A").append("\n");
+            mensajeConfirmacion.append("  Duración actual: ").append(visita.getDuracionFormateada()).append("\n");
+
+            if (!observaciones.trim().isEmpty()) {
+                mensajeConfirmacion.append("\nOBSERVACIONES DEL EGRESO:\n");
+                mensajeConfirmacion.append("  ").append(observaciones);
+            }
+
+            mensajeConfirmacion.append("\n\nEsta acción finalizará la visita y registrará el egreso.");
+
+            // Mostrar diálogo de confirmación
+            int resultado = JOptionPane.showConfirmDialog(
+                this,
+                mensajeConfirmacion.toString(),
+                "Confirmar Registro de Egreso",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+            );
+
+            if (resultado != JOptionPane.YES_OPTION) {
+                return; // Usuario canceló
+            }
+        } else {
+            mostrarError("La visita no está en estado EN_CURSO\nEstado actual: " + visita.getEstadoVisita());
             return;
         }
 
@@ -637,9 +845,29 @@ public class VistaControlAcceso extends JFrame {
             protected void done() {
                 try {
                     if (get()) {
+                        // Obtener visita actualizada para mostrar duración final
+                        Visita visitaActualizada = controlador.buscarVisitaPorId(idVisita);
+
+                        StringBuilder mensajeExito = new StringBuilder();
+                        mensajeExito.append("✓ EGRESO REGISTRADO EXITOSAMENTE\n\n");
+                        mensajeExito.append("ID Visita: ").append(idVisita).append("\n");
+                        mensajeExito.append("Operador: ").append(usuarioActual.getNombreCompleto()).append("\n");
+
+                        if (visitaActualizada != null) {
+                            mensajeExito.append("Hora Egreso: ").append(
+                                visitaActualizada.getHoraEgreso() != null ?
+                                formatoHora.format(visitaActualizada.getHoraEgreso()) : "N/A"
+                            ).append("\n");
+                            mensajeExito.append("Duración Total: ").append(visitaActualizada.getDuracionFormateada()).append("\n");
+                        }
+
+                        if (!observaciones.trim().isEmpty()) {
+                            mensajeExito.append("\nObservaciones registradas: ").append(observaciones);
+                        }
+
                         JOptionPane.showMessageDialog(
                             VistaControlAcceso.this,
-                            "Egreso registrado exitosamente",
+                            mensajeExito.toString(),
                             "Egreso Registrado",
                             JOptionPane.INFORMATION_MESSAGE
                         );
@@ -647,14 +875,17 @@ public class VistaControlAcceso extends JFrame {
                         // Limpiar campos
                         txtIdVisita.setText("");
                         txtObservaciones.setText("");
+                        txtDetallesVisita.setText("Seleccione una visita para ver sus detalles aquí...");
+                        txtDetallesVisita.setForeground(TemaColors.TEXTO_SECUNDARIO);
+                        btnRegistrarEgreso.setEnabled(false);
 
                         // Actualizar tabla
                         cargarVisitasEnCurso();
                     } else {
-                        mostrarError("No se pudo registrar el egreso\nVerifique la consola");
+                        mostrarError("No se pudo registrar el egreso\nVerifique la consola para más detalles");
                     }
                 } catch (Exception e) {
-                    mostrarError("Error: " + e.getMessage());
+                    mostrarError("Error al registrar egreso: " + e.getMessage());
                 } finally {
                     btnRegistrarEgreso.setEnabled(true);
                     btnRegistrarEgreso.setText("Registrar Egreso");
@@ -689,8 +920,22 @@ public class VistaControlAcceso extends JFrame {
         }
 
         // Actualizar título de la pestaña
-        JPanel panelPrincipal = (JPanel) getContentPane().getComponent(0);
-        JTabbedPane tabbedPane = (JTabbedPane) panelPrincipal.getComponent(0);
+        JPanel contenedorCompleto = (JPanel) getContentPane().getComponent(0);
+        JPanel panelPrincipal;
+
+        // Obtener el panelPrincipal (siempre en BorderLayout.CENTER del contenedorCompleto)
+        if (contenedorCompleto.getLayout() instanceof BorderLayout) {
+            // panelPrincipal está en CENTER del contenedorCompleto
+            Component centerComponent = ((BorderLayout)contenedorCompleto.getLayout()).getLayoutComponent(BorderLayout.CENTER);
+            panelPrincipal = (JPanel) centerComponent;
+        } else {
+            // Fallback por si acaso
+            panelPrincipal = contenedorCompleto;
+        }
+
+        // El tabbedPane está en BorderLayout.CENTER del panelPrincipal
+        Component tabbedPaneComponent = ((BorderLayout)panelPrincipal.getLayout()).getLayoutComponent(BorderLayout.CENTER);
+        JTabbedPane tabbedPane = (JTabbedPane) tabbedPaneComponent;
         tabbedPane.setTitleAt(2, "Visitas en Curso (" + visitas.size() + ")");
     }
 
@@ -723,6 +968,127 @@ public class VistaControlAcceso extends JFrame {
                 "\nPiso: " + interno.getPisoActual(),
                 "Interno Seleccionado",
                 JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+
+    /**
+     * Busca una visita activa mediante el diálogo de búsqueda avanzada.
+     */
+    private void buscarVisitaParaEgreso() {
+        Visita visita = DialogoBusquedaVisitaActiva.mostrarDialogo(this);
+        if (visita != null) {
+            txtIdVisita.setText(visita.getIdVisita().toString());
+            mostrarDetallesVisitaSeleccionada(visita);
+
+            JOptionPane.showMessageDialog(this,
+                "Visita seleccionada para egreso:\n\n" +
+                "ID: " + visita.getIdVisita() + "\n" +
+                "Visitante: " + (visita.getVisitante() != null ?
+                    visita.getVisitante().getNombreCompleto() : "N/A") + "\n" +
+                "Interno: " + (visita.getInterno() != null ?
+                    visita.getInterno().getNombreCompleto() : "N/A") + "\n" +
+                "Ingreso: " + (visita.getHoraIngreso() != null ?
+                    formatoHora.format(visita.getHoraIngreso()) : "N/A"),
+                "Visita Seleccionada",
+                JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+
+    /**
+     * Actualiza los detalles de la visita cuando se ingresa un ID manualmente.
+     */
+    private void actualizarDetallesVisita() {
+        String idVisitaStr = txtIdVisita.getText().trim();
+
+        if (idVisitaStr.isEmpty()) {
+            txtDetallesVisita.setText("Seleccione una visita para ver sus detalles aquí...");
+            txtDetallesVisita.setForeground(TemaColors.TEXTO_SECUNDARIO);
+            btnRegistrarEgreso.setEnabled(false);
+            return;
+        }
+
+        try {
+            Long idVisita = Long.parseLong(idVisitaStr);
+            Visita visita = controlador.buscarVisitaPorId(idVisita);
+
+            if (visita != null) {
+                mostrarDetallesVisitaSeleccionada(visita);
+            } else {
+                txtDetallesVisita.setText("✗ No se encontró visita con ID: " + idVisita);
+                txtDetallesVisita.setForeground(TemaColors.ESTADO_ERROR);
+                btnRegistrarEgreso.setEnabled(false);
+            }
+        } catch (NumberFormatException e) {
+            txtDetallesVisita.setText("✗ ID de visita inválido");
+            txtDetallesVisita.setForeground(TemaColors.ESTADO_ERROR);
+            btnRegistrarEgreso.setEnabled(false);
+        }
+    }
+
+    /**
+     * Muestra los detalles de una visita seleccionada.
+     */
+    private void mostrarDetallesVisitaSeleccionada(Visita visita) {
+        if (visita == null) {
+            txtDetallesVisita.setText("✗ No se encontró la visita");
+            txtDetallesVisita.setForeground(TemaColors.ESTADO_ERROR);
+            btnRegistrarEgreso.setEnabled(false);
+            return;
+        }
+
+        StringBuilder detalles = new StringBuilder();
+        detalles.append("ID Visita: ").append(visita.getIdVisita()).append("\n");
+        detalles.append("─────────────────────────────────────\n");
+
+        if (visita.getVisitante() != null) {
+            Visitante v = visita.getVisitante();
+            detalles.append("VISITANTE:\n");
+            detalles.append("  Nombre: ").append(v.getNombreCompleto()).append("\n");
+            detalles.append("  DNI: ").append(v.getDni()).append("\n");
+        } else {
+            detalles.append("VISITANTE: No disponible\n");
+        }
+
+        detalles.append("\n");
+
+        if (visita.getInterno() != null) {
+            Interno i = visita.getInterno();
+            detalles.append("INTERNO:\n");
+            detalles.append("  Nombre: ").append(i.getNombreCompleto()).append("\n");
+            detalles.append("  Legajo: ").append(i.getNumeroLegajo()).append("\n");
+            detalles.append("  Ubicación: Pab. ").append(i.getPabellonActual())
+                    .append(" - Piso ").append(i.getPisoActual()).append("\n");
+        } else {
+            detalles.append("INTERNO: No disponible\n");
+        }
+
+        detalles.append("\n");
+        detalles.append("VISITA:\n");
+        detalles.append("  Fecha: ").append(formatoFecha.format(visita.getFechaVisita())).append("\n");
+        detalles.append("  Ingreso: ").append(visita.getHoraIngreso() != null ?
+            formatoHora.format(visita.getHoraIngreso()) : "N/A").append("\n");
+        detalles.append("  Estado: ").append(visita.getEstadoVisita()).append("\n");
+        detalles.append("  Duración: ").append(visita.getDuracionFormateada()).append("\n");
+
+        if (visita.getObservaciones() != null && !visita.getObservaciones().trim().isEmpty()) {
+            detalles.append("\nOBSERVACIONES:\n");
+            detalles.append("  ").append(visita.getObservaciones());
+        }
+
+        txtDetallesVisita.setText(detalles.toString());
+
+        // Validar estado para habilitar/deshabilitar botón de egreso
+        if (visita.getEstadoVisita().toString().equals("EN_CURSO")) {
+            txtDetallesVisita.setForeground(TemaColors.ESTADO_EXITO);
+            btnRegistrarEgreso.setEnabled(true);
+        } else {
+            txtDetallesVisita.setForeground(TemaColors.ESTADO_ERROR);
+            txtDetallesVisita.setText(
+                txtDetallesVisita.getText() +
+                "\n\n✗ ESTADO INVÁLIDO PARA EGRESO\n" +
+                "La visita debe estar EN_CURSO para poder registrar el egreso."
+            );
+            btnRegistrarEgreso.setEnabled(false);
         }
     }
 
